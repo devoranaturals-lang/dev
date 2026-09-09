@@ -106,6 +106,7 @@ export function AuthProvider({ children }) {
     }
 
     // 2. Supabase auth check (for custom Supabase Auth users)
+    let supabaseError = null;
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -123,24 +124,29 @@ export function AuthProvider({ children }) {
           }
           return data.user;
         }
+        if (error) {
+          supabaseError = error.message;
+        }
       } catch (err) {
-        console.warn("Supabase auth failed, checking registered admin store:", err);
+        supabaseError = err.message;
       }
     }
 
-    // 3. Registered Admins store
+    // 3. Registered Admins store (Local & offline fallback)
     try {
-      const rawAdmins = localStorage.getItem("devora_registered_admins");
+      const rawAdmins = typeof window !== "undefined" ? localStorage.getItem("devora_registered_admins") : null;
       const adminsList = rawAdmins ? JSON.parse(rawAdmins) : [];
       const found = adminsList.find(
         (a) => a.email?.toLowerCase() === normalizedEmail && a.password === password
       );
       if (found) {
         const adminUser = { id: found.id, email: found.email, name: found.name, role: "admin" };
-        localStorage.setItem(
-          "devora_admin_session",
-          JSON.stringify({ active: true, email: found.email, name: found.name, ts: Date.now() })
-        );
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            "devora_admin_session",
+            JSON.stringify({ active: true, email: found.email, name: found.name, ts: Date.now() })
+          );
+        }
         setUser(adminUser);
         setIsAdmin(true);
         return adminUser;
@@ -149,7 +155,14 @@ export function AuthProvider({ children }) {
       console.error("Failed to check registered admins:", e);
     }
 
-    throw new Error("Invalid admin credentials");
+    if (supabaseError) {
+      if (supabaseError.toLowerCase().includes("email not confirmed")) {
+        throw new Error("Email not confirmed in Supabase. In Supabase Dashboard > Authentication > Users, check 'Auto Confirm User' or confirm via email.");
+      }
+      throw new Error(supabaseError);
+    }
+
+    throw new Error("Invalid admin email or password. Please check your credentials.");
   };
 
   const registerAdmin = async (name, email, password) => {
@@ -167,6 +180,9 @@ export function AuthProvider({ children }) {
         });
         if (!error && data?.user) {
           createdUser = data.user;
+        } else if (error?.message?.includes("already registered")) {
+          // If already registered in Supabase, sign in directly
+          return await loginAdmin(email, password);
         }
       } catch (err) {
         console.warn("Supabase auth admin registration fallback to local:", err);
