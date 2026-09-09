@@ -1,0 +1,543 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getProducts, addProduct, updateProduct, deleteProduct, getCategories } from "../../../lib/supabase";
+import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
+
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+
+  const [form, setForm] = useState({
+    name: "",
+    price: "",
+    actual_price: "",
+    category: "",
+    description: "",
+    image_url: "",
+    stock: "50",
+    rating: "4.8",
+    is_featured: false,
+    is_active: true,
+    is_returnable: true,
+    return_period_days: 7,
+  });
+
+  const loadData = async () => {
+    setLoading(true);
+    const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
+    setProducts(prods || []);
+    setCategories(cats || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const openAddModal = () => {
+    setEditItem(null);
+    setForm({
+      name: "",
+      price: "",
+      actual_price: "",
+      category: categories[0]?.name || "Skin Care",
+      description: "",
+      image_url: "",
+      stock: "50",
+      rating: "4.8",
+      is_featured: false,
+      is_active: true,
+      is_returnable: true,
+      return_period_days: 7,
+    });
+    setModalOpen(true);
+  };
+
+  const openEditModal = (product) => {
+    setEditItem(product);
+    setForm({
+      name: product.name,
+      price: product.price,
+      actual_price: product.actual_price || "",
+      category: product.category,
+      description: product.description || "",
+      image_url: product.image_url || "",
+      stock: product.stock || 50,
+      rating: product.rating || 4.8,
+      is_featured: Boolean(product.is_featured),
+      is_active: product.is_active !== undefined ? Boolean(product.is_active) : true,
+      is_returnable: product.is_returnable !== undefined ? Boolean(product.is_returnable) : true,
+      return_period_days: product.return_period_days || 7,
+    });
+    setModalOpen(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.price || !form.category) {
+      alert("Product Name, Price, and Category are required.");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: form.name,
+        slug: form.name.toLowerCase().replace(/\s+/g, "-"),
+        price: Number(form.price),
+        actual_price: Number(form.actual_price) || Number(form.price),
+        category: form.category,
+        description: form.description,
+        image_url: form.image_url || "https://images.unsplash.com/photo-1608248597263-00079e96047c?auto=format&fit=crop&w=600&q=80",
+        stock: Number(form.stock || 50),
+        rating: Number(form.rating || 4.8),
+        is_featured: Boolean(form.is_featured),
+        is_active: Boolean(form.is_active),
+        is_returnable: Boolean(form.is_returnable),
+        return_period_days: form.is_returnable ? Number(form.return_period_days || 7) : 0,
+      };
+
+      if (editItem) {
+        await updateProduct(editItem.id, payload);
+      } else {
+        await addProduct(payload);
+      }
+
+      setModalOpen(false);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save product: " + err.message);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      await deleteProduct(id);
+      await loadData();
+    }
+  };
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900">Product Inventory</h1>
+          <p className="text-xs text-slate-500 mt-1">Manage catalog listings, prices, and imagery</p>
+        </div>
+
+        <button
+          onClick={openAddModal}
+          className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add New Product</span>
+        </button>
+      </div>
+
+      {/* Search & Stats */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search inventory..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-700"
+          />
+        </div>
+
+        <span className="text-xs font-bold text-slate-500">
+          Showing {filteredProducts.length} of {products.length} Products
+        </span>
+      </div>
+
+      {/* Products Table */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center flex flex-col items-center space-y-2">
+            <RefreshCw className="w-6 h-6 text-brand-700 animate-spin" />
+            <p className="text-xs text-slate-500 font-medium">Loading inventory...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 text-xs font-medium">
+            No products match your search query.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="p-4">Product Details</th>
+                  <th className="p-4">Category</th>
+                  <th className="p-4">Selling Price</th>
+                  <th className="p-4">Actual Price</th>
+                  <th className="p-4">Stock</th>
+                  <th className="p-4 text-center">Return & Replace</th>
+                  <th className="p-4 text-center">Active</th>
+                  <th className="p-4 text-center">Featured</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredProducts.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 flex items-center gap-3">
+                      <img
+                        src={p.image_url || "https://images.unsplash.com/photo-1608248597263-00079e96047c?auto=format&fit=crop&w=100&q=80"}
+                        alt={p.name}
+                        className="w-12 h-12 object-cover rounded-xl border border-slate-200 flex-shrink-0"
+                      />
+                      <div>
+                        <p className="font-bold text-slate-900 text-xs leading-snug">{p.name}</p>
+                        <p className="text-[10px] text-slate-400 line-clamp-1 max-w-xs">{p.description}</p>
+                      </div>
+                    </td>
+
+                    <td className="p-4 font-semibold text-brand-700">
+                      <span className="px-2.5 py-1 bg-brand-50 border border-brand-200 rounded-full">
+                        {p.category}
+                      </span>
+                    </td>
+
+                    <td className="p-4 font-black text-earth-700">
+                      ₹{Number(p.price).toLocaleString("en-IN")}
+                    </td>
+                    
+                    <td className="p-4 font-medium text-slate-400 line-through">
+                      {p.actual_price ? `₹${Number(p.actual_price).toLocaleString("en-IN")}` : "-"}
+                    </td>
+
+                    <td className="p-4 font-medium text-slate-600">
+                      {p.stock || 50} units
+                    </td>
+
+                    {/* Return & Replacement Quick Switch */}
+                    <td className="p-4 text-center">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const newReturn = p.is_returnable === false ? true : false;
+                          await updateProduct(p.id, { is_returnable: newReturn });
+                          await loadData();
+                        }}
+                        title={p.is_returnable !== false ? "Return & Replacement is ON (Click to turn OFF)" : "Return & Replacement is OFF (Click to turn ON)"}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                          p.is_returnable !== false ? "bg-emerald-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                            p.is_returnable !== false ? "translate-x-5" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                      <span className="block text-[9px] font-bold text-slate-500 mt-0.5">
+                        {p.is_returnable !== false ? `${p.return_period_days || 7}d Return` : "No Return"}
+                      </span>
+                    </td>
+
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={async () => {
+                          const newActive = !p.is_active;
+                          await updateProduct(p.id, { is_active: newActive });
+                          await loadData();
+                        }}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                          p.is_active !== false ? 'bg-emerald-500' : 'bg-slate-300'
+                        }`}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                          p.is_active !== false ? 'translate-x-5' : 'translate-x-1'
+                        }`} />
+                      </button>
+                    </td>
+
+                    <td className="p-4 text-center">
+                      {p.is_featured ? (
+                        <span className="inline-block p-1 bg-emerald-100 text-emerald-700 rounded-full">
+                          <Check className="w-3.5 h-3.5" />
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
+                    </td>
+
+                    <td className="p-4 text-right space-x-2">
+                      <button
+                        onClick={() => openEditModal(p)}
+                        className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                        title="Edit Product"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(p.id, p.name)}
+                        className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                        title="Delete Product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add / Edit Product Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-6 animate-in fade-in zoom-in duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-slate-900 text-base">
+                {editItem ? "Edit Product" : "Add New Product"}
+              </h3>
+              <button onClick={() => setModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Product Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. Kumkumadi Saffron Glow Oil"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Selling Price (₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    placeholder="389"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Actual Price (₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={form.actual_price}
+                    onChange={(e) => setForm({ ...form, actual_price: e.target.value })}
+                    placeholder="499"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Category *</label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
+                  >
+                    {categories.length === 0 ? (
+                      <option value="Skin Care">Skin Care</option>
+                    ) : (
+                      categories.map((c) => (
+                        <option key={c.id || c.name} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Product Image (Upload JPG/PNG)</label>
+                <div className="space-y-3">
+                  {form.image_url && (
+                    <div className="relative w-20 h-20">
+                      <img 
+                        src={form.image_url} 
+                        alt="Preview" 
+                        className="w-20 h-20 object-cover rounded-xl border border-slate-200 shadow-sm"
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg, image/jpg, image/png"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setForm({ ...form, image_url: reader.result });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-100 file:text-brand-700 hover:file:bg-brand-200 cursor-pointer"
+                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 border-t border-slate-200"></div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">OR</span>
+                    <div className="flex-1 border-t border-slate-200"></div>
+                  </div>
+                  <input
+                    type="text"
+                    value={form.image_url}
+                    onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                    placeholder="Enter image URL directly (https://...)"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Key benefits and Ayurvedic ingredients..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700"
+                />
+              </div>
+
+              {/* Return & Replacement Option with Modern ON/OFF Switch */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`p-2 rounded-xl transition-colors ${
+                      form.is_returnable ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"
+                    }`}>
+                      <RotateCcw className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <label
+                        className="font-extrabold text-slate-900 text-xs block cursor-pointer"
+                        onClick={() => setForm({ ...form, is_returnable: !form.is_returnable })}
+                      >
+                        Return & Replacement Option
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        {form.is_returnable
+                          ? `Eligible for customer return & replacement (${form.return_period_days || 7} Days)`
+                          : "Non-returnable item (consumable / herbal product)"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Modern ON/OFF Switch Button */}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-black uppercase tracking-wider ${
+                      form.is_returnable ? "text-emerald-700 font-extrabold" : "text-slate-400"
+                    }`}>
+                      {form.is_returnable ? "ON" : "OFF"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, is_returnable: !form.is_returnable })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                        form.is_returnable ? "bg-emerald-600" : "bg-slate-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                          form.is_returnable ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {form.is_returnable && (
+                  <div className="pt-2.5 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+                    <div className="text-[11px] text-slate-600">
+                      <span>Customer Return Window (Days from delivery):</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={form.return_period_days}
+                        onChange={(e) => setForm({ ...form, return_period_days: e.target.value })}
+                        className="w-20 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-center text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-700"
+                      />
+                      <span className="text-xs font-bold text-slate-600">Days</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6 pt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={form.is_active}
+                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                    className="w-4 h-4 text-brand-700 rounded border-slate-300 cursor-pointer"
+                  />
+                  <label htmlFor="is_active" className="font-bold text-slate-700 cursor-pointer">
+                    Product is Active (Visible to Customers)
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_featured"
+                    checked={form.is_featured}
+                    onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                    className="w-4 h-4 text-brand-700 rounded border-slate-300 cursor-pointer"
+                  />
+                  <label htmlFor="is_featured" className="font-bold text-slate-700 cursor-pointer">
+                    Feature on Homepage
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-brand-800 text-white font-bold rounded-xl shadow-md"
+                >
+                  {editItem ? "Save Changes" : "Create Product"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

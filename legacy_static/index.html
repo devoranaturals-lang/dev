@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devora Naturals</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <h1>Devora Naturals</h1>
+        </div>
+
+        <nav>
+            <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="#">Skin Care</a></li>
+    <li><a href="#">Hair Care</a></li>
+    <li><a href="#">Pooja Items</a></li>
+    <li><a href="#">About</a></li>
+    <li><a href="#">Contact</a></li>
+
+    <li>
+    <a href="cart.html" class="cart-link">
+        🛒 Cart
+        <span id="cartCount">0</span>
+    </a>
+</li>
+</ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h2>Welcome to Devora Naturals</h2>
+        <p>Pure Herbal Skin Care, Hair Care & Traditional Pooja Products</p>
+        <button>Shop Now</button>
+    </section>
+  
+<section class="featured-products">
+
+    <h2>Our Products</h2>
+
+    <input
+    type="text"
+    id="searchBox"
+    placeholder="Search products..."
+>
+
+<br><br>
+
+<select id="categoryFilter">
+    <option value="">All Categories</option>
+    <option value="Hair Care">Hair Care</option>
+    <option value="Skin Care">Skin Care</option>
+    <option value="Pooja">Pooja</option>
+</select>
+
+<br><br>
+
+<div id="productContainer"></div>
+
+</section>
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Devora Naturals. All Rights Reserved.</p>
+    </footer>
+    
+    <script type="module" src="js/products.js"></script>
+
+</body>
+</html>

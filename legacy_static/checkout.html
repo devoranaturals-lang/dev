@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Devora Naturals</title>
+
+    <link rel="stylesheet" href="css/checkout.css">
+</head>
+<body>
+
+<header class="header">
+    <h1>Checkout</h1>
+</header>
+
+<div class="checkout-container">
+
+    <!-- Customer Details -->
+    <div class="customer-form">
+
+        <h2>Customer Details</h2>
+
+        <input type="text" id="name" placeholder="Full Name">
+
+        <input type="text" id="phone" placeholder="Mobile Number">
+
+        <input type="email" id="email" placeholder="Email">
+
+        <textarea id="address" placeholder="Address"></textarea>
+
+        <input type="text" id="city" placeholder="City">
+
+        <input type="text" id="state" placeholder="State">
+
+        <input type="text" id="pincode" placeholder="Pincode">
+
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+
+        <h2>Order Summary</h2>
+
+        <div id="orderItems"></div>
+
+        <h3 id="orderTotal">Total: ₹0</h3>
+
+        <button id="placeOrderBtn">
+            Place Order
+        </button>
+
+    </div>
+
+</div>
+
+<script type="module" src="js/checkout.js"></script>
+
+</body>
+</html>
