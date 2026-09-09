@@ -1,37 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
-import { Leaf, Lock, Mail, User, ArrowRight, UserPlus, LogIn } from "lucide-react";
+import { Leaf, Lock, Mail, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
-  const { loginAdmin, registerAdmin } = useAuth();
+  const { loginAdmin } = useAuth();
 
-  const [isRegister, setIsRegister] = useState(false);
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
     try {
       setLoading(true);
-      if (isRegister) {
-        await registerAdmin(name || "Administrator", email, password);
-      } else {
-        await loginAdmin(email, password);
-      }
+      await loginAdmin(email, password);
       window.location.href = "/admin";
     } catch (err) {
-      console.error("Admin auth error:", err);
-      setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
+      console.error("Admin login error:", err);
+      setErrorMsg(err.message || "Invalid admin credentials. Please check your email and password.");
     } finally {
       setLoading(false);
     }
@@ -52,46 +44,8 @@ export default function AdminLoginPage() {
             <div className="absolute inset-0 bg-brand-500 opacity-0 group-hover:opacity-20 transition-opacity"></div>
             <Leaf className="w-9 h-9 text-brand-100 group-hover:scale-110 transition-transform duration-300 animate-[spin_10s_linear_infinite]" />
           </div>
-          <h1 className="text-2xl font-black text-white pt-2">
-            {isRegister ? "Create Admin Account" : "Admin Portal"}
-          </h1>
-          <p className="text-xs text-brand-200">
-            {isRegister ? "Register your personal administrator credentials" : "Devora Naturals Management Console"}
-          </p>
-        </div>
-
-        {/* Tab Toggle: Sign In vs Create Admin */}
-        <div className="flex bg-brand-900/90 p-1 rounded-2xl border border-brand-700/60">
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(false);
-              setErrorMsg("");
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              !isRegister
-                ? "bg-earth-600 text-white shadow-md"
-                : "text-brand-300 hover:text-white"
-            }`}
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>Sign In</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(true);
-              setErrorMsg("");
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              isRegister
-                ? "bg-earth-600 text-white shadow-md"
-                : "text-brand-300 hover:text-white"
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Create Admin</span>
-          </button>
+          <h1 className="text-2xl font-black text-white pt-2">Admin Portal</h1>
+          <p className="text-xs text-brand-200">Devora Naturals Management Console</p>
         </div>
 
         {/* Error Alert */}
@@ -101,25 +55,8 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        {/* Admin Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && (
-            <div>
-              <label className="block text-xs font-bold text-brand-200 mb-1">Admin Name</label>
-              <div className="relative">
-                <User className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
-                <input
-                  type="text"
-                  required
-                  placeholder="Your Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500"
-                />
-              </div>
-            </div>
-          )}
-
+        {/* Admin Sign In Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-brand-200 mb-1">Admin Email</label>
             <div className="relative">
@@ -127,7 +64,7 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 required
-                placeholder="your-admin@email.com"
+                placeholder="admin@devoranaturals.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500"
@@ -155,15 +92,7 @@ export default function AdminLoginPage() {
             disabled={loading}
             className="w-full py-3 bg-earth-600 hover:bg-earth-700 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer mt-2"
           >
-            <span>
-              {loading
-                ? isRegister
-                  ? "Creating Admin Account..."
-                  : "Authenticating..."
-                : isRegister
-                ? "Register & Access Dashboard"
-                : "Sign In to Dashboard"}
-            </span>
+            <span>{loading ? "Authenticating..." : "Sign In to Dashboard"}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
