@@ -57,6 +57,24 @@ export default function AdminLoginPage() {
           </div>
         )}
 
+        {/* Demo Credentials Quick Fill Banner */}
+        <div className="p-3 bg-brand-900/80 border border-brand-700/80 rounded-2xl flex items-center justify-between gap-2 text-xs">
+          <div className="space-y-0.5">
+            <span className="font-bold text-amber-300 block text-[11px]">Default Admin Login:</span>
+            <span className="text-brand-300 text-[10px] block font-mono">admin@devoranaturals.com / admin123</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("admin@devoranaturals.com");
+              setPassword("admin123");
+            }}
+            className="px-2.5 py-1.5 bg-brand-700 hover:bg-brand-600 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer shrink-0 border border-brand-600"
+          >
+            Auto-fill
+          </button>
+        </div>
+
         {/* Admin Sign In Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
