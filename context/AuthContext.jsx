@@ -13,7 +13,25 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     async function checkAuth() {
-      // 1. Supabase Admin Session check
+      // 1. Local admin session check first (instant, no network delay)
+      const storedAdmin = typeof window !== "undefined" ? localStorage.getItem("devora_admin_session") : null;
+      if (storedAdmin) {
+        try {
+          const parsed = JSON.parse(storedAdmin);
+          const EIGHT_HOURS = 8 * 60 * 60 * 1000;
+          if (parsed?.active && parsed?.ts && Date.now() - parsed.ts < EIGHT_HOURS) {
+            setUser({ email: parsed.email || "admin@devoranaturals.com", role: "admin" });
+            setIsAdmin(true);
+          } else {
+            // Expired — clean up
+            localStorage.removeItem("devora_admin_session");
+          }
+        } catch (e) {
+          localStorage.removeItem("devora_admin_session");
+        }
+      }
+
+      // 2. Supabase Admin Session check
       if (isSupabaseConfigured && supabase) {
         try {
           const { data } = await supabase.auth.getSession();
@@ -26,27 +44,8 @@ export function AuthProvider({ children }) {
         }
       }
       
-      // 2. Local admin session check with expiry (8-hour timeout)
-      const storedAdmin = localStorage.getItem("devora_admin_session");
-      if (storedAdmin) {
-        try {
-          const parsed = JSON.parse(storedAdmin);
-          const EIGHT_HOURS = 8 * 60 * 60 * 1000;
-          if (parsed?.active && parsed?.ts && Date.now() - parsed.ts < EIGHT_HOURS) {
-            setUser({ email: parsed.email || "admin@devoranaturals.com" });
-            setIsAdmin(true);
-          } else {
-            // Expired — clean up
-            localStorage.removeItem("devora_admin_session");
-          }
-        } catch (e) {
-          // Legacy string value or corrupt — remove it
-          localStorage.removeItem("devora_admin_session");
-        }
-      }
-      
       // 3. Customer session check - ALWAYS executed, never blocked by admin session
-      const storedCustomer = localStorage.getItem("devora_customer_session");
+      const storedCustomer = typeof window !== "undefined" ? localStorage.getItem("devora_customer_session") : null;
       if (storedCustomer) {
         try {
           const parsed = JSON.parse(storedCustomer);
@@ -92,7 +91,21 @@ export function AuthProvider({ children }) {
   const loginAdmin = async (email, password) => {
     const normalizedEmail = (email || "").trim().toLowerCase();
 
-    // 1. Supabase auth check
+    // 1. Demo root admin credentials (instant, zero network latency)
+    if (normalizedEmail === "admin@devoranaturals.com" && password === "admin123") {
+      const mockUser = { email: "admin@devoranaturals.com", role: "admin" };
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "devora_admin_session",
+          JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
+        );
+      }
+      setUser(mockUser);
+      setIsAdmin(true);
+      return mockUser;
+    }
+
+    // 2. Supabase auth check (for custom Supabase Auth users)
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -102,27 +115,17 @@ export function AuthProvider({ children }) {
         if (!error && data?.user) {
           setUser(data.user);
           setIsAdmin(true);
-          localStorage.setItem(
-            "devora_admin_session",
-            JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
-          );
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "devora_admin_session",
+              JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
+            );
+          }
           return data.user;
         }
       } catch (err) {
-        console.warn("Supabase auth failed, checking demo admin credentials:", err);
+        console.warn("Supabase auth failed, checking registered admin store:", err);
       }
-    }
-
-    // 2. Demo root admin credentials
-    if (normalizedEmail === "admin@devoranaturals.com" && password === "admin123") {
-      const mockUser = { email: "admin@devoranaturals.com", role: "admin" };
-      localStorage.setItem(
-        "devora_admin_session",
-        JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
-      );
-      setUser(mockUser);
-      setIsAdmin(true);
-      return mockUser;
     }
 
     // 3. Registered Admins store

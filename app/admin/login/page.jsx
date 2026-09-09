@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
     try {
       setLoading(true);
       await loginAdmin(email, password);
-      router.push("/admin");
+      window.location.href = "/admin";
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || "Invalid admin credentials. Please check your email and password.");
