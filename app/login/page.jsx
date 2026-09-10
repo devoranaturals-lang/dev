@@ -276,7 +276,7 @@ export default function CustomerLoginPage() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Priya Sharma"
+                    placeholder="Enter your full name"
                     className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-4 py-2.5 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium"
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function CustomerLoginPage() {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9876543210"
+                    placeholder="Enter your phone number"
                     className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-4 py-2.5 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium"
                   />
                 </div>

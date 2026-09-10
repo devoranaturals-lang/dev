@@ -1541,7 +1541,7 @@ export default function AdminCustomersPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Radhika Sharma"
+                    placeholder="Customer full name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
@@ -1553,7 +1553,7 @@ export default function AdminCustomersPage() {
                   <input
                     type="email"
                     required
-                    placeholder="radhika@example.com"
+                    placeholder="Email address"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
@@ -1566,7 +1566,7 @@ export default function AdminCustomersPage() {
                   <label className="block font-bold text-slate-700 mb-1">Phone / WhatsApp Number</label>
                   <input
                     type="tel"
-                    placeholder="10-digit mobile number"
+                    placeholder="Phone number"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
@@ -1591,7 +1591,7 @@ export default function AdminCustomersPage() {
                 <label className="block font-bold text-slate-700 mb-1">Street Address / House No.</label>
                 <textarea
                   rows="2"
-                  placeholder="Door number, Apartment name, Street or Landmark"
+                  placeholder="Door number, Apartment name, Street"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
@@ -1637,7 +1637,7 @@ export default function AdminCustomersPage() {
                 <label className="block font-bold text-slate-700 mb-1">Customer Internal Notes</label>
                 <input
                   type="text"
-                  placeholder="e.g. VIP wholesale interest, prefers Ayurvedic herbal hair products"
+                  placeholder="Additional notes about this customer"
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700"
