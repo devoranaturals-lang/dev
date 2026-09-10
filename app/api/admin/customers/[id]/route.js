@@ -45,7 +45,7 @@ function isAuthorizedAdmin(request) {
 
   if (authHeader) {
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-    if (token === "admin@devoranaturals.com") return true;
+    if (token === "devoranaturals@gmail.com") return true;
     try {
       const parts = token.split(".");
       if (parts.length === 3) {
@@ -53,7 +53,7 @@ function isAuthorizedAdmin(request) {
           Buffer.from(parts[1], "base64").toString("utf-8")
         );
         if (
-          payload.email === "admin@devoranaturals.com" ||
+          payload.email === "devoranaturals@gmail.com" ||
           payload.user_metadata?.role === "admin" ||
           payload.app_metadata?.role === "admin"
         ) {

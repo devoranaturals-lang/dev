@@ -91,21 +91,7 @@ export function AuthProvider({ children }) {
   const loginAdmin = async (email, password) => {
     const normalizedEmail = (email || "").trim().toLowerCase();
 
-    // 1. Demo root admin credentials (instant, zero network latency)
-    if (normalizedEmail === "admin@devoranaturals.com" && password === "admin123") {
-      const mockUser = { email: "admin@devoranaturals.com", role: "admin" };
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "devora_admin_session",
-          JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
-        );
-      }
-      setUser(mockUser);
-      setIsAdmin(true);
-      return mockUser;
-    }
-
-    // 2. Supabase auth check (for custom Supabase Auth users)
+    // 1. Supabase auth check (primary login method)
     let supabaseError = null;
     if (isSupabaseConfigured && supabase) {
       try {

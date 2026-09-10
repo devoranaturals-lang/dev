@@ -41,7 +41,7 @@ function isAuthorizedAdmin(request) {
 
   if (authHeader) {
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-    if (token === "admin@devoranaturals.com") {
+    if (token === "devoranaturals@gmail.com") {
       return true;
     }
     // Check JWT payload if passed
@@ -50,7 +50,7 @@ function isAuthorizedAdmin(request) {
       if (parts.length === 3) {
         const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
         if (
-          payload.email === "admin@devoranaturals.com" ||
+          payload.email === "devoranaturals@gmail.com" ||
           payload.user_metadata?.role === "admin" ||
           payload.app_metadata?.role === "admin"
         ) {
