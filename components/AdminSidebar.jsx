@@ -25,7 +25,7 @@ import { useAdminTheme } from "../context/AdminThemeContext";
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logoutAdmin, user } = useAuth();
+  const { logoutAdmin } = useAuth();
   const { isDark, toggleTheme } = useAdminTheme();
 
   const handleLogout = async () => {
@@ -123,11 +123,8 @@ export default function AdminSidebar() {
           <span>Sign Out Admin</span>
         </button>
 
-        {user && (
-          <div className="pt-2 text-[10px] text-brand-400 text-center truncate">
-            Logged in: <span className="font-mono text-brand-200">{user.email}</span>
-          </div>
-        )}
+
+
       </div>
     </aside>
   );
