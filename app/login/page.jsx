@@ -40,12 +40,11 @@ export default function CustomerLoginPage() {
     try {
       if (isOtpFlow) {
         if (!otpSent) {
-          const generatedOtp = await requestCustomerOtp(email);
-          setExpectedOtp(generatedOtp);
+          await requestCustomerOtp(email);
           setOtpSent(true);
           setSuccessMsg(`OTP code sent to ${email}`);
         } else {
-          await verifyCustomerOtp(email, otpCode, expectedOtp);
+          await verifyCustomerOtp(email, otpCode);
           setSuccessMsg("Signed in successfully via OTP! Welcome back.");
           setTimeout(() => {
             router.push("/account");

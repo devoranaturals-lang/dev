@@ -276,31 +276,45 @@ export function AuthProvider({ children }) {
       throw new Error("This email is not registered as an Admin.");
     }
 
-    // Generate random 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error("Supabase is not configured to send emails.");
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+    });
     
-    // Simulate sending OTP
-    window.alert(`[SIMULATED EMAIL]
-To: ${normalizedEmail}
-Subject: Your Admin Login OTP
-
-Your One-Time Password is: ${otpCode}
-
-(Do not share this code with anyone)`);
-    
-    return otpCode;
-  };
-
-  const verifyAdminOtp = async (email, otpInput, expectedOtp) => {
-    if (!otpInput || otpInput !== expectedOtp) {
-      throw new Error("Invalid or expired OTP code.");
+    if (error) {
+      throw new Error("Failed to send OTP: " + error.message);
     }
     
-    // OTP matches, log them in
+    return true;
+  };
+
+  const verifyAdminOtp = async (email, otpInput) => {
+    if (!otpInput) throw new Error("Please enter the OTP.");
+    
     const normalizedEmail = (email || "").trim().toLowerCase();
+    
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error("Supabase is not configured to verify emails.");
+    }
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: otpInput,
+      type: 'email'
+    });
+    
+    if (error) {
+      throw new Error("Invalid or expired OTP code: " + error.message);
+    }
+    
+    // Ensure the user role is recorded
     const adminData = {
       email: normalizedEmail,
-      role: "admin"
+      role: "admin",
+      id: data.user?.id
     };
     
     localStorage.setItem(
@@ -315,61 +329,63 @@ Your One-Time Password is: ${otpCode}
   const requestCustomerOtp = async (email) => {
     const normalizedEmail = (email || "").trim().toLowerCase();
     
-    // Check if customer exists
-    let customerExists = false;
-    if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from("customers").select("id").ilike("email", normalizedEmail).maybeSingle();
-      if (data) customerExists = true;
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error("Supabase is not configured to send emails.");
     }
     
-    if (!customerExists && typeof window !== "undefined") {
-      const rawCustomers = localStorage.getItem("devora_customers");
-      if (rawCustomers) {
-        const customers = JSON.parse(rawCustomers);
-        if (customers.find(c => c.email && c.email.toLowerCase() === normalizedEmail)) {
-          customerExists = true;
-        }
-      }
-    }
-
-    if (!customerExists) {
-      throw new Error("No account found with this email. Please register first.");
-    }
-
-    // Generate random 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // We do NOT block new customers here. Supabase Auth signInWithOtp automatically creates
+    // a user if they don't exist (when shouldCreateUser is true, which is default).
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+    });
     
-    // Simulate sending OTP
-    window.alert(`[SIMULATED EMAIL]
-To: ${normalizedEmail}
-Subject: Your Devora Naturals Login OTP
-
-Your One-Time Password is: ${otpCode}
-
-(Do not share this code with anyone)`);
+    if (error) {
+      throw new Error("Failed to send OTP: " + error.message);
+    }
     
-    return otpCode;
+    return true;
   };
 
-  const verifyCustomerOtp = async (email, otpInput, expectedOtp) => {
-    if (!otpInput || otpInput !== expectedOtp) {
-      throw new Error("Invalid or expired OTP code.");
-    }
+  const verifyCustomerOtp = async (email, otpInput) => {
+    if (!otpInput) throw new Error("Please enter the OTP code.");
     
     const normalizedEmail = (email || "").trim().toLowerCase();
     
-    // Get full customer data
-    let customerData = null;
-    if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from("customers").select("*").ilike("email", normalizedEmail).maybeSingle();
-      if (data) customerData = data;
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error("Supabase is not configured.");
+    }
+
+    const { data: authData, error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: otpInput,
+      type: 'email'
+    });
+    
+    if (error || !authData?.user) {
+      throw new Error("Invalid or expired OTP code: " + (error?.message || ""));
     }
     
-    if (!customerData && typeof window !== "undefined") {
-      const rawCustomers = localStorage.getItem("devora_customers");
-      if (rawCustomers) {
-        const customers = JSON.parse(rawCustomers);
-        customerData = customers.find(c => c.email && c.email.toLowerCase() === normalizedEmail);
+    // Check if they exist in public.customers
+    let customerData = null;
+    const { data: existingProfile } = await supabase.from("customers").select("*").ilike("email", normalizedEmail).maybeSingle();
+    
+    if (existingProfile) {
+      customerData = existingProfile;
+    } else {
+      // Sync them to public.customers
+      const newProfile = {
+        id: authData.user.id,
+        email: normalizedEmail,
+        name: normalizedEmail.split('@')[0], // Generate default name
+        created_at: new Date().toISOString(),
+        status: "Active"
+      };
+      
+      const { data: inserted, error: insertErr } = await supabase.from("customers").insert([newProfile]).select().single();
+      if (!insertErr && inserted) {
+        customerData = inserted;
+      } else {
+        customerData = newProfile;
       }
     }
     

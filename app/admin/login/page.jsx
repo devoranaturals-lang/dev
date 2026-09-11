@@ -29,12 +29,11 @@ export default function AdminLoginPage() {
       if (isOtpFlow) {
         if (!otpSent) {
           // Request OTP
-          const generatedOtp = await requestAdminOtp(email);
-          setExpectedOtp(generatedOtp);
+          await requestAdminOtp(email);
           setOtpSent(true);
         } else {
           // Verify OTP
-          await verifyAdminOtp(email, otpCode, expectedOtp);
+          await verifyAdminOtp(email, otpCode);
           window.location.href = "/admin";
         }
       } else {
