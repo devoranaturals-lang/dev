@@ -90,6 +90,21 @@ CREATE TABLE IF NOT EXISTS public.offers (
     "discountCode" TEXT,
     type TEXT DEFAULT 'festival',
     "isActive" BOOLEAN DEFAULT true,
+    "discountType" TEXT DEFAULT 'percentage',
+    "discountValue" NUMERIC(10, 2) DEFAULT 0,
+    "discountPercent" NUMERIC(10, 2) DEFAULT 0,
+    "minOrderAmount" NUMERIC(10, 2) DEFAULT 0,
+    "maxDiscountCap" NUMERIC(10, 2) DEFAULT 0,
+    category TEXT DEFAULT 'All',
+    "usageLimit" INTEGER DEFAULT 0,
+    "usageCount" INTEGER DEFAULT 0,
+    "startDate" TEXT,
+    "expiryDate" TEXT,
+    "hasTimer" BOOLEAN DEFAULT false,
+    "timerEnd" TEXT,
+    "showBanner" BOOLEAN DEFAULT true,
+    "showProductPage" BOOLEAN DEFAULT true,
+    "isAutoApply" BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -175,6 +190,23 @@ ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Activ
 ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS total_orders INTEGER DEFAULT 0;
 ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS total_spent NUMERIC(10, 2) DEFAULT 0;
 ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- Offers & Coupons: extended data fields
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "discountType" TEXT DEFAULT 'percentage';
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "discountValue" NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "discountPercent" NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "minOrderAmount" NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "maxDiscountCap" NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "category" TEXT DEFAULT 'All';
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "usageLimit" INTEGER DEFAULT 0;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "usageCount" INTEGER DEFAULT 0;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "startDate" TEXT;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "expiryDate" TEXT;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "hasTimer" BOOLEAN DEFAULT false;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "timerEnd" TEXT;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "showBanner" BOOLEAN DEFAULT true;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "showProductPage" BOOLEAN DEFAULT true;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS "isAutoApply" BOOLEAN DEFAULT false;
 
 -- Settings: all extended admin settings
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS store_name TEXT DEFAULT 'Devora Naturals';
