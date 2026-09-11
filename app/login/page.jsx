@@ -17,11 +17,6 @@ export default function CustomerLoginPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [isOtpFlow, setIsOtpFlow] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [expectedOtp, setExpectedOtp] = useState("");
-  
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,25 +33,11 @@ export default function CustomerLoginPage() {
     setLoading(true);
 
     try {
-      if (isOtpFlow) {
-        if (!otpSent) {
-          await requestCustomerOtp(email);
-          setOtpSent(true);
-          setSuccessMsg(`OTP code sent to ${email}`);
-        } else {
-          await verifyCustomerOtp(email, otpCode);
-          setSuccessMsg("Signed in successfully via OTP! Welcome back.");
-          setTimeout(() => {
-            router.push("/account");
-          }, 700);
-        }
-      } else {
-        await loginCustomer(email, password);
-        setSuccessMsg("Signed in successfully! Welcome back.");
-        setTimeout(() => {
-          router.push("/account");
-        }, 700);
-      }
+      await loginCustomer(email, password);
+      setSuccessMsg("Signed in successfully! Welcome back.");
+      setTimeout(() => {
+        router.push("/account");
+      }, 700);
     } catch (err) {
       console.error("Customer login error:", err);
       setErrorMsg(err.message || "Invalid credentials. Please verify your details.");
@@ -223,105 +204,48 @@ export default function CustomerLoginPage() {
           {/* LOGIN FORM */}
           {mode === "login" ? (
             <div className="space-y-4">
-              {/* OTP vs Password Toggle */}
-              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOtpFlow(false);
-                    setOtpSent(false);
-                    setErrorMsg("");
-                    setSuccessMsg("");
-                  }}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    !isOtpFlow ? "bg-white text-brand-800 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Password Login
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOtpFlow(true);
-                    setOtpSent(false);
-                    setErrorMsg("");
-                    setSuccessMsg("");
-                  }}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    isOtpFlow ? "bg-white text-brand-800 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  OTP Login
-                </button>
-              </div>
-
               <form onSubmit={handleLogin} className="space-y-4">
                 
-                {(!isOtpFlow || !otpSent) && (
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="customer@example.com"
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-4 py-3 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium"
-                      />
-                    </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="customer@example.com"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-4 py-3 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium"
+                    />
                   </div>
-                )}
+                </div>
 
-                {!isOtpFlow && (
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-11 py-3 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-11 py-3 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                )}
-
-                {isOtpFlow && otpSent && (
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Enter 6-Digit OTP
-                    </label>
-                    <p className="text-[10px] text-slate-500 mb-2">We sent a verification code to {email}</p>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        required
-                        maxLength={6}
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value)}
-                        placeholder="123456"
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-10 pr-4 py-3 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-brand-700 transition-all font-medium text-center tracking-[0.5em]"
-                      />
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 <button
                   type="submit"
@@ -335,7 +259,7 @@ export default function CustomerLoginPage() {
                     </>
                   ) : (
                     <>
-                      <span>{isOtpFlow && !otpSent ? "Send OTP Code" : "Sign In"}</span>
+                      <span>Sign In</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
