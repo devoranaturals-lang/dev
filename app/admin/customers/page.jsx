@@ -92,7 +92,13 @@ export default function AdminCustomersPage() {
       }
     };
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("devora_customers_updated", loadData);
+    window.addEventListener("devora_orders_updated", loadData);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("devora_customers_updated", loadData);
+      window.removeEventListener("devora_orders_updated", loadData);
+    };
   }, []);
 
   const openAddModal = () => {

@@ -97,6 +97,13 @@ export async function DELETE(request, { params }) {
       }
 
       if (existing) {
+        // Fetch order details to update customer stats later
+        const { data: orderDetails } = await supabaseAdmin
+          .from("orders")
+          .select("customer_email, total_amount")
+          .eq("id", id)
+          .maybeSingle();
+
         // 2. Delete child order_items first to preserve foreign key constraints
         const { error: itemsError } = await supabaseAdmin
           .from("order_items")
@@ -127,6 +134,28 @@ export async function DELETE(request, { params }) {
             { error: "Supabase blocked the deletion. Please ensure you have a DELETE policy enabled in your Supabase RLS settings." },
             { status: 403 }
           );
+        }
+
+        // 4. Update customer stats
+        if (orderDetails && orderDetails.customer_email) {
+          const email = orderDetails.customer_email.trim().toLowerCase();
+          
+          // Fetch current customer stats
+          const { data: customer } = await supabaseAdmin
+            .from("customers")
+            .select("id, total_orders, total_spent")
+            .ilike("email", email)
+            .maybeSingle();
+
+          if (customer) {
+            const newOrders = Math.max(0, (customer.total_orders || 0) - 1);
+            const newSpent = Math.max(0, Number(customer.total_spent || 0) - Number(orderDetails.total_amount || 0));
+
+            await supabaseAdmin
+              .from("customers")
+              .update({ total_orders: newOrders, total_spent: newSpent })
+              .eq("id", customer.id);
+          }
         }
       }
     }
