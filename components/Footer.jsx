@@ -109,6 +109,12 @@ export default function Footer() {
     loadSettings();
 
     const handleSettingsUpdate = (e) => {
+      if (e?.type === "devora_categories_updated") {
+        getCategories().then(cats => {
+          if (cats) setCategories(cats);
+        }).catch(console.error);
+        return;
+      }
       if (e?.detail) {
         if (e.detail.email || e.detail.phone || e.detail.address || e.detail.store_name || e.detail.logo_url !== undefined || e.detail.social_links) {
           setContactDetails((prev) => ({ ...prev, ...e.detail }));
@@ -123,9 +129,11 @@ export default function Footer() {
 
     window.addEventListener("devora_settings_updated", handleSettingsUpdate);
     window.addEventListener("devora_storefront_updated", handleSettingsUpdate);
+    window.addEventListener("devora_categories_updated", handleSettingsUpdate);
     return () => {
       window.removeEventListener("devora_settings_updated", handleSettingsUpdate);
       window.removeEventListener("devora_storefront_updated", handleSettingsUpdate);
+      window.removeEventListener("devora_categories_updated", handleSettingsUpdate);
     };
   }, []);
 

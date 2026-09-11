@@ -278,6 +278,14 @@ DO $$ BEGIN
     CREATE POLICY "Public update customers" ON public.customers FOR UPDATE USING (true);
   END IF;
 
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='customers' AND policyname='Admin delete customers') THEN
+    CREATE POLICY "Admin delete customers" ON public.customers FOR DELETE TO authenticated USING (
+      (auth.jwt() ->> 'email') = 'admin@devoranaturals.com'
+      OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+      OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    );
+  END IF;
+
   -- Full access policies for catalog, settings
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='categories' AND policyname='Allow all categories') THEN
     CREATE POLICY "Allow all categories" ON public.categories FOR ALL USING (true);
