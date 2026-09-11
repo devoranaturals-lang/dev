@@ -973,20 +973,24 @@ export default function AdminCustomersPage() {
                       </span>
                     </div>
 
-                    {order.order_items && order.order_items.length > 0 && (
-                      <div className="pt-2 border-t border-slate-100 space-y-1">
-                        {order.order_items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
-                            <span className="line-clamp-1">
-                              • {item.product_name} <strong className="text-slate-900">x{item.quantity}</strong>
-                            </span>
-                            <span className="font-mono text-slate-800">
-                              ₹{(Number(item.price || 0) * (item.quantity || 1)).toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {(() => {
+                      const orderItemsList = order.order_items || order.items || [];
+                      if (orderItemsList.length === 0) return null;
+                      return (
+                        <div className="pt-2 border-t border-slate-100 space-y-1">
+                          {orderItemsList.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
+                              <span className="line-clamp-1">
+                                • {item.product_name || item.name || "Ayurvedic Product"} <strong className="text-slate-900">x{item.quantity || 1}</strong>
+                              </span>
+                              <span className="font-mono text-slate-800">
+                                ₹{(Number(item.price || 0) * (item.quantity || 1)).toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
@@ -1482,7 +1486,7 @@ export default function AdminCustomersPage() {
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        {ord.order_items?.map((it) => it.product_name).join(", ") || "Ayurvedic products"}
+                        {(ord.order_items || ord.items)?.map((it) => it.product_name || it.name).join(", ") || "Ayurvedic products"}
                       </p>
                     </div>
 
