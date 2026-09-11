@@ -253,6 +253,135 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // ==========================================
+  // OTP SIMULATION LOGIC
+  // ==========================================
+
+  const requestAdminOtp = async (email) => {
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    
+    // Check if the email belongs to an admin
+    let isAdminEmail = normalizedEmail === "admin@devoranaturals.com";
+    if (!isAdminEmail && typeof window !== "undefined") {
+      const rawAdmins = localStorage.getItem("devora_registered_admins");
+      if (rawAdmins) {
+        const admins = JSON.parse(rawAdmins);
+        if (admins.find(a => a.email === normalizedEmail)) {
+          isAdminEmail = true;
+        }
+      }
+    }
+
+    if (!isAdminEmail) {
+      throw new Error("This email is not registered as an Admin.");
+    }
+
+    // Generate random 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Simulate sending OTP
+    window.alert(`[SIMULATED EMAIL]
+To: ${normalizedEmail}
+Subject: Your Admin Login OTP
+
+Your One-Time Password is: ${otpCode}
+
+(Do not share this code with anyone)`);
+    
+    return otpCode;
+  };
+
+  const verifyAdminOtp = async (email, otpInput, expectedOtp) => {
+    if (!otpInput || otpInput !== expectedOtp) {
+      throw new Error("Invalid or expired OTP code.");
+    }
+    
+    // OTP matches, log them in
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    const adminData = {
+      email: normalizedEmail,
+      role: "admin"
+    };
+    
+    localStorage.setItem(
+      "devora_admin_session",
+      JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
+    );
+    setUser(adminData);
+    setIsAdmin(true);
+    return adminData;
+  };
+
+  const requestCustomerOtp = async (email) => {
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    
+    // Check if customer exists
+    let customerExists = false;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from("customers").select("id").ilike("email", normalizedEmail).maybeSingle();
+      if (data) customerExists = true;
+    }
+    
+    if (!customerExists && typeof window !== "undefined") {
+      const rawCustomers = localStorage.getItem("devora_customers");
+      if (rawCustomers) {
+        const customers = JSON.parse(rawCustomers);
+        if (customers.find(c => c.email && c.email.toLowerCase() === normalizedEmail)) {
+          customerExists = true;
+        }
+      }
+    }
+
+    if (!customerExists) {
+      throw new Error("No account found with this email. Please register first.");
+    }
+
+    // Generate random 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Simulate sending OTP
+    window.alert(`[SIMULATED EMAIL]
+To: ${normalizedEmail}
+Subject: Your Devora Naturals Login OTP
+
+Your One-Time Password is: ${otpCode}
+
+(Do not share this code with anyone)`);
+    
+    return otpCode;
+  };
+
+  const verifyCustomerOtp = async (email, otpInput, expectedOtp) => {
+    if (!otpInput || otpInput !== expectedOtp) {
+      throw new Error("Invalid or expired OTP code.");
+    }
+    
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    
+    // Get full customer data
+    let customerData = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from("customers").select("*").ilike("email", normalizedEmail).maybeSingle();
+      if (data) customerData = data;
+    }
+    
+    if (!customerData && typeof window !== "undefined") {
+      const rawCustomers = localStorage.getItem("devora_customers");
+      if (rawCustomers) {
+        const customers = JSON.parse(rawCustomers);
+        customerData = customers.find(c => c.email && c.email.toLowerCase() === normalizedEmail);
+      }
+    }
+    
+    if (customerData) {
+      setCustomerUser(customerData);
+      localStorage.setItem("devora_customer_session", JSON.stringify(customerData));
+      return customerData;
+    } else {
+      throw new Error("Failed to load customer profile.");
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -268,6 +397,10 @@ export function AuthProvider({ children }) {
         logoutCustomer,
         setCustomerUser,
         updateCustomerSession,
+        requestAdminOtp,
+        verifyAdminOtp,
+        requestCustomerOtp,
+        verifyCustomerOtp,
       }}
     >
       {children}

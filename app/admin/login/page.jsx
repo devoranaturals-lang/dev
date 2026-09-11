@@ -6,10 +6,16 @@ import { Leaf, Lock, Mail, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-  const { loginAdmin } = useAuth();
+  const { loginAdmin, requestAdminOtp, verifyAdminOtp } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [expectedOtp, setExpectedOtp] = useState("");
+  
+  const [isOtpFlow, setIsOtpFlow] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,11 +25,26 @@ export default function AdminLoginPage() {
 
     try {
       setLoading(true);
-      await loginAdmin(email, password);
-      window.location.href = "/admin";
+      
+      if (isOtpFlow) {
+        if (!otpSent) {
+          // Request OTP
+          const generatedOtp = await requestAdminOtp(email);
+          setExpectedOtp(generatedOtp);
+          setOtpSent(true);
+        } else {
+          // Verify OTP
+          await verifyAdminOtp(email, otpCode, expectedOtp);
+          window.location.href = "/admin";
+        }
+      } else {
+        // Standard Password Login
+        await loginAdmin(email, password);
+        window.location.href = "/admin";
+      }
     } catch (err) {
       console.error("Admin login error:", err);
-      setErrorMsg(err.message || "Invalid admin credentials. Please check your email and password.");
+      setErrorMsg(err.message || "Invalid credentials. Please check your details.");
     } finally {
       setLoading(false);
     }
@@ -55,46 +76,106 @@ export default function AdminLoginPage() {
           </div>
         )}
 
+        {/* Mode Switch Tabs */}
+        <div className="flex bg-brand-900/50 p-1 rounded-2xl border border-brand-700/50 mb-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIsOtpFlow(false);
+              setOtpSent(false);
+              setErrorMsg("");
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              !isOtpFlow ? "bg-brand-700 text-white shadow-sm" : "text-brand-300 hover:text-white"
+            }`}
+          >
+            Password
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsOtpFlow(true);
+              setOtpSent(false);
+              setErrorMsg("");
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              isOtpFlow ? "bg-brand-700 text-white shadow-sm" : "text-brand-300 hover:text-white"
+            }`}
+          >
+            OTP Login
+          </button>
+        </div>
+
         {/* Admin Sign In Form */}
         <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
-          <div>
-            <label className="block text-xs font-bold text-brand-200 mb-1">Admin Email</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
-              <input
-                type="email"
-                required
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="new-password"
-                className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500"
-              />
+          
+          {(!isOtpFlow || !otpSent) && (
+            <div>
+              <label className="block text-xs font-bold text-brand-200 mb-1">Admin Email</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="new-password"
+                  className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
-          <div>
-            <label className="block text-xs font-bold text-brand-200 mb-1">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500"
-              />
+          {!isOtpFlow && (
+            <div>
+              <label className="block text-xs font-bold text-brand-200 mb-1">Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {isOtpFlow && otpSent && (
+            <div>
+              <label className="block text-xs font-bold text-brand-200 mb-1">Enter 6-Digit OTP</label>
+              <p className="text-[10px] text-brand-300 mb-2">We sent a code to {email}</p>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
+                <input
+                  type="text"
+                  required
+                  placeholder="123456"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-brand-900/90 border border-brand-700 rounded-xl text-sm text-white placeholder:text-brand-400/60 focus:outline-none focus:ring-2 focus:ring-earth-500 text-center tracking-[0.5em] font-bold"
+                />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 bg-earth-600 hover:bg-earth-700 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer mt-2"
           >
-            <span>{loading ? "Authenticating..." : "Sign In to Dashboard"}</span>
+            <span>
+              {loading 
+                ? "Processing..." 
+                : isOtpFlow && !otpSent 
+                  ? "Send OTP Code" 
+                  : "Sign In to Dashboard"}
+            </span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
