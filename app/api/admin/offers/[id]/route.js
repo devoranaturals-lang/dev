@@ -12,47 +12,30 @@ const supabaseAdmin = (supabaseUrl && (supabaseServiceKey || supabaseAnonKey))
 /**
  * Validates whether the caller has authenticated admin rights.
  */
-function isAuthorizedAdmin(request) {
-  const adminHeader = request.headers.get("x-admin-auth");
+async function isAuthorizedAdmin(request) {
   const authHeader = request.headers.get("authorization");
 
-  if (adminHeader) {
+  if (!authHeader) return false;
+
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return false;
+
+  if (supabaseAdmin) {
     try {
-      const parsed = JSON.parse(adminHeader);
-      const EIGHT_HOURS = 8 * 60 * 60 * 1000;
-      if (
-        parsed?.active === true &&
-        Boolean(parsed?.email) &&
-        parsed?.ts &&
-        Date.now() - parsed.ts < EIGHT_HOURS
-      ) {
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+      if (error || !user) return false;
+
+      const email = user.email?.toLowerCase();
+      if (email === "admin@devoranaturals.com") {
+        return true;
+      }
+
+      if (user.user_metadata?.role === "admin" || user.app_metadata?.role === "admin") {
         return true;
       }
     } catch (e) {
-      if (typeof adminHeader === "string" && adminHeader.includes("@")) {
-        return true;
-      }
+      console.error("Token verification failed:", e);
     }
-  }
-
-  if (authHeader) {
-    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-    if (token === "devoranaturals@gmail.com") {
-      return true;
-    }
-    try {
-      const parts = token.split(".");
-      if (parts.length === 3) {
-        const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
-        if (
-          payload.email === "devoranaturals@gmail.com" ||
-          payload.user_metadata?.role === "admin" ||
-          payload.app_metadata?.role === "admin"
-        ) {
-          return true;
-        }
-      }
-    } catch (e) {}
   }
 
   return false;
@@ -71,7 +54,8 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    if (!isAuthorizedAdmin(request)) {
+    const isAuthorized = await isAuthorizedAdmin(request);
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: "Unauthorized: Only authenticated admin users are allowed to delete coupons/offers." },
         { status: 403 }

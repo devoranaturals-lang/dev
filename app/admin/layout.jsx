@@ -17,18 +17,6 @@ function AdminLayoutContent({ children }) {
 
   useEffect(() => {
     if (!loading && !isAdmin && !isLoginPage) {
-      // Direct localStorage safety check to prevent false redirects
-      try {
-        const stored = typeof window !== "undefined" ? localStorage.getItem("devora_admin_session") : null;
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const EIGHT_HOURS = 8 * 60 * 60 * 1000;
-          if (parsed?.active && parsed?.ts && Date.now() - parsed.ts < EIGHT_HOURS) {
-            return; // Valid session exists, wait for auth context state to sync
-          }
-        }
-      } catch (e) {}
-
       router.push("/admin/login");
     }
   }, [isAdmin, loading, isLoginPage, router]);

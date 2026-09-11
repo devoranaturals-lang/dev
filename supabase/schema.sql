@@ -352,3 +352,33 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.storefront_settings ("heroBgGradientStart", "heroBgGradientEnd", "heroHeading", "heroDescription") VALUES
 ('#064e3b', '#065f46', 'Natural Care For Your Skin, Hair & Soul', 'Elevate your daily self-care ritual with handcrafted Kumkumadi oils, wild-harvested Bhringraj scalp tonics, and sacred organic Sambrani dhoop.')
 ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- ROW LEVEL SECURITY (RLS)
+-- ==============================================================================
+
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.storefront_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+
+-- 1. Public Read Access for Storefront Data
+CREATE POLICY "Public read access for categories" ON public.categories FOR SELECT USING (true);
+CREATE POLICY "Public read access for products" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Public read access for offers" ON public.offers FOR SELECT USING (true);
+CREATE POLICY "Public read access for settings" ON public.settings FOR SELECT USING (true);
+CREATE POLICY "Public read access for storefront_settings" ON public.storefront_settings FOR SELECT USING (true);
+
+-- 2. Orders & Order Items: Anyone can place an order (INSERT) but only admins (via service_role) can SELECT all
+CREATE POLICY "Public insert orders" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can read own orders by email" ON public.orders FOR SELECT USING (customer_email = auth.jwt() ->> 'email');
+CREATE POLICY "Public insert order_items" ON public.order_items FOR INSERT WITH CHECK (true);
+
+-- 3. Customers Table
+CREATE POLICY "Customers can view their own profile" ON public.customers FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Customers can update their own profile" ON public.customers FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Public insert customers" ON public.customers FOR INSERT WITH CHECK (true);
