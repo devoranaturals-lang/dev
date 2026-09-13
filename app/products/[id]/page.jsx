@@ -75,8 +75,11 @@ export default function ProductDetailPage() {
     const handleStorageChange = (e) => {
       if (
         e.key === "devora_mock_products_v1" ||
+        e.key === "devora_products_sync_ping" ||
         e.key === "devora_mock_settings_v1" ||
+        e.key === "devora_settings_sync_ping" ||
         e.key === "devora_storefront_updated" ||
+        e.key === "devora_storefront_sync_ping" ||
         e.key === "devora_offers_sync_ping" ||
         e.key === "devora_deleted_offers"
       ) {
@@ -85,11 +88,15 @@ export default function ProductDetailPage() {
     };
 
     window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("devora_products_updated", load);
+    window.addEventListener("devora_settings_updated", load);
     window.addEventListener("devora_storefront_updated", load);
     window.addEventListener("devora_offers_updated", load);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("devora_products_updated", load);
+      window.removeEventListener("devora_settings_updated", load);
       window.removeEventListener("devora_storefront_updated", load);
       window.removeEventListener("devora_offers_updated", load);
     };

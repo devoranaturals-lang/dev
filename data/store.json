@@ -1,0 +1,184 @@
+{
+  "products": [],
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Skin Care",
+      "slug": "skin-care",
+      "description": "Herbal face oils, glowing serums, and natural botanical creams"
+    },
+    {
+      "id": "cat-2",
+      "name": "Hair Care",
+      "slug": "hair-care",
+      "description": "Pure hair growth oils, Ayurvedic shampoos, and scalp nourishers"
+    },
+    {
+      "id": "cat-3",
+      "name": "Pooja Items",
+      "slug": "pooja",
+      "description": "Traditional organic dhoop, herbal camphor, and brass pooja essentials"
+    }
+  ],
+  "offers": [
+    {
+      "id": "off-devora10",
+      "title": "10% Herbal Discount",
+      "description": "Flat 10% OFF on your entire Ayurvedic & botanical order",
+      "discountCode": "DEVORA10",
+      "type": "coupon",
+      "discountType": "percentage",
+      "discountValue": 10,
+      "discountPercent": 10,
+      "minOrderAmount": 0,
+      "maxDiscountCap": 0,
+      "usageLimit": 500,
+      "usageCount": 14,
+      "category": "All",
+      "isActive": true,
+      "showBanner": true,
+      "showProductPage": true,
+      "hasTimer": false
+    },
+    {
+      "id": "off-flat100",
+      "title": "Flat ₹100 Mega Saver",
+      "description": "Save flat ₹100 on orders above ₹799",
+      "discountCode": "FLAT100",
+      "type": "coupon",
+      "discountType": "fixed",
+      "discountValue": 100,
+      "discountPercent": 0,
+      "minOrderAmount": 799,
+      "maxDiscountCap": 100,
+      "usageLimit": 200,
+      "usageCount": 8,
+      "category": "All",
+      "isActive": true,
+      "showBanner": false,
+      "showProductPage": true,
+      "hasTimer": false
+    },
+    {
+      "id": "off-bogo",
+      "title": "Buy 2 Get 1 FREE",
+      "description": "Buy any 2 natural care items and get the 3rd item FREE",
+      "discountCode": "BUY2GET1",
+      "type": "bogo",
+      "discountType": "bogo",
+      "discountValue": 0,
+      "discountPercent": 0,
+      "minOrderAmount": 0,
+      "maxDiscountCap": 0,
+      "usageLimit": 300,
+      "usageCount": 22,
+      "category": "All",
+      "isActive": true,
+      "showBanner": true,
+      "showProductPage": true,
+      "hasTimer": false
+    },
+    {
+      "id": "off-festive15",
+      "title": "Festive Celebration Savings",
+      "description": "Save 15% on pure natural wellness combos",
+      "discountCode": "FESTIVE15",
+      "type": "festival",
+      "discountType": "percentage",
+      "discountValue": 15,
+      "discountPercent": 15,
+      "minOrderAmount": 499,
+      "maxDiscountCap": 300,
+      "usageLimit": 150,
+      "usageCount": 45,
+      "category": "All",
+      "isActive": true,
+      "showBanner": true,
+      "showProductPage": true,
+      "hasTimer": true,
+      "timerEnd": "2026-09-18T02:10:48.343Z"
+    },
+    {
+      "id": "off-welcome10",
+      "title": "Welcome Gift Offer",
+      "description": "Get 10% off your entire first organic order",
+      "discountCode": "WELCOME10",
+      "type": "coupon",
+      "discountType": "percentage",
+      "discountValue": 10,
+      "discountPercent": 10,
+      "minOrderAmount": 299,
+      "maxDiscountCap": 0,
+      "usageLimit": 1000,
+      "usageCount": 31,
+      "category": "All",
+      "isActive": true,
+      "showBanner": false,
+      "showProductPage": true,
+      "hasTimer": false
+    }
+  ],
+  "settings": {
+    "store_name": "Devora Naturals",
+    "tagline": "Pure Ayurvedic & Botanical Organic Care",
+    "email": "support@devoranaturals.com",
+    "phone": "+91 8608540400",
+    "address": "Kerala Botanical Organic Farm, India",
+    "whatsapp": "8608540400",
+    "free_shipping_threshold": 499,
+    "state_shipping_enabled": true,
+    "shipping_charge_tamilnadu": 50,
+    "shipping_charge_other_states": 100,
+    "standard_shipping_charge": 50,
+    "delivery_estimate": "Tamil Nadu: 1-2 Days | Other States: 3-5 Business Days",
+    "support_hours": "Mon - Sat: 9:00 AM - 7:00 PM IST",
+    "order_prefix": "DEV-",
+    "instagram_url": "https://instagram.com/devoranaturals",
+    "facebook_url": "https://facebook.com/devoranaturals",
+    "youtube_url": "https://youtube.com/@devoranaturals",
+    "social_links_enabled": true,
+    "social_links": [
+      {
+        "id": "soc-1",
+        "platform": "Instagram",
+        "title": "Instagram",
+        "url": "https://instagram.com/devoranaturals",
+        "icon": "Instagram",
+        "is_active": true
+      },
+      {
+        "id": "soc-2",
+        "platform": "Facebook",
+        "title": "Facebook",
+        "url": "https://facebook.com/devoranaturals",
+        "icon": "Facebook",
+        "is_active": true
+      },
+      {
+        "id": "soc-3",
+        "platform": "YouTube",
+        "title": "YouTube",
+        "url": "https://youtube.com/@devoranaturals",
+        "icon": "Youtube",
+        "is_active": true
+      },
+      {
+        "id": "soc-4",
+        "platform": "WhatsApp",
+        "title": "WhatsApp Chat",
+        "url": "https://wa.me/918608540400",
+        "icon": "MessageCircle",
+        "is_active": true
+      }
+    ],
+    "return_policy_enabled": true,
+    "return_window_days": 7,
+    "return_policy_text": "7-Day Easy Replacement Guarantee for damaged or defective items"
+  },
+  "storefront": {
+    "heroHeading": "Natural Care For Your Skin, Hair & Soul"
+  },
+  "customers": [],
+  "orders": [],
+  "updated_at": "2026-09-13T02:35:48.710Z"
+}

@@ -100,11 +100,42 @@ export default function Navbar() {
       }
     };
 
+    const handleCategoriesUpdate = (e) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setCategories(e.detail);
+      } else {
+        import("../lib/supabase").then(({ getCategories }) => {
+          getCategories().then((c) => { if (c) setCategories(c); });
+        });
+      }
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === "devora_categories_sync_ping" || e.key === "devora_mock_categories_v1") {
+        import("../lib/supabase").then(({ getCategories }) => {
+          getCategories().then((c) => { if (c) setCategories(c); });
+        });
+      }
+      if (
+        e.key === "devora_settings_sync_ping" ||
+        e.key === "devora_storefront_sync_ping" ||
+        e.key === "devora_mock_settings_v1" ||
+        e.key === "devora_mock_storefront_v2"
+      ) {
+        handleSettingsUpdate({});
+      }
+    };
+
     window.addEventListener("devora_settings_updated", handleSettingsUpdate);
     window.addEventListener("devora_storefront_updated", handleSettingsUpdate);
+    window.addEventListener("devora_categories_updated", handleCategoriesUpdate);
+    window.addEventListener("storage", handleStorageChange);
+
     return () => {
       window.removeEventListener("devora_settings_updated", handleSettingsUpdate);
       window.removeEventListener("devora_storefront_updated", handleSettingsUpdate);
+      window.removeEventListener("devora_categories_updated", handleCategoriesUpdate);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 

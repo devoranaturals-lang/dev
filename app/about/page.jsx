@@ -50,6 +50,26 @@ export default function AboutPage() {
       }
     }
     loadData();
+
+    const handleUpdate = () => loadData();
+    const handleStorageChange = (e) => {
+      if (
+        e.key === "devora_settings_sync_ping" ||
+        e.key === "devora_mock_settings_v1"
+      ) {
+        loadData();
+      }
+    };
+
+    window.addEventListener("devora_about_updated", handleUpdate);
+    window.addEventListener("devora_settings_updated", handleUpdate);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("devora_about_updated", handleUpdate);
+      window.removeEventListener("devora_settings_updated", handleUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   return (

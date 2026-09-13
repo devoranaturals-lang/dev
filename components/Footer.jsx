@@ -127,13 +127,29 @@ export default function Footer() {
       }
     };
 
+    const handleStorageChange = (e) => {
+      if (
+        e.key === "devora_settings_sync_ping" ||
+        e.key === "devora_storefront_sync_ping" ||
+        e.key === "devora_categories_sync_ping" ||
+        e.key === "devora_mock_settings_v1" ||
+        e.key === "devora_mock_storefront_v2" ||
+        e.key === "devora_mock_categories_v1"
+      ) {
+        loadSettings();
+      }
+    };
+
     window.addEventListener("devora_settings_updated", handleSettingsUpdate);
     window.addEventListener("devora_storefront_updated", handleSettingsUpdate);
     window.addEventListener("devora_categories_updated", handleSettingsUpdate);
+    window.addEventListener("storage", handleStorageChange);
+
     return () => {
       window.removeEventListener("devora_settings_updated", handleSettingsUpdate);
       window.removeEventListener("devora_storefront_updated", handleSettingsUpdate);
       window.removeEventListener("devora_categories_updated", handleSettingsUpdate);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 

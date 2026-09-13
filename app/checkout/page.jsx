@@ -137,20 +137,28 @@ export default function CheckoutPage() {
     }
     loadData();
 
-    const handleOffersUpdated = () => {
+    const handleLiveSync = () => {
       loadData();
     };
 
     const handleStorageChange = (e) => {
-      if (e.key === "devora_offers_sync_ping" || e.key === "devora_deleted_offers" || e.key === "devora_mock_offers_v1") {
+      if (
+        e.key === "devora_offers_sync_ping" ||
+        e.key === "devora_deleted_offers" ||
+        e.key === "devora_mock_offers_v1" ||
+        e.key === "devora_settings_sync_ping" ||
+        e.key === "devora_mock_settings_v1"
+      ) {
         loadData();
       }
     };
 
-    window.addEventListener("devora_offers_updated", handleOffersUpdated);
+    window.addEventListener("devora_offers_updated", handleLiveSync);
+    window.addEventListener("devora_settings_updated", handleLiveSync);
     window.addEventListener("storage", handleStorageChange);
     return () => {
-      window.removeEventListener("devora_offers_updated", handleOffersUpdated);
+      window.removeEventListener("devora_offers_updated", handleLiveSync);
+      window.removeEventListener("devora_settings_updated", handleLiveSync);
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);

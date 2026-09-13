@@ -73,12 +73,28 @@ export default function HomePage() {
     }
     fetchData();
 
-    // Listen for live storefront updates from admin
+    // Listen for live storefront, products, and categories updates from admin
     const handleStorefrontUpdate = (e) => {
-      if (e.detail) {
+      if (e?.detail) {
         setStorefront(e.detail);
       } else {
         getStorefrontSettings().then((sf) => setStorefront(sf));
+      }
+    };
+
+    const handleProductsUpdate = (e) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setProducts(e.detail);
+      } else {
+        getProducts().then((p) => setProducts(p || []));
+      }
+    };
+
+    const handleCategoriesUpdate = (e) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setCategories(e.detail);
+      } else {
+        getCategories().then((c) => setCategories(c || []));
       }
     };
 
@@ -86,12 +102,25 @@ export default function HomePage() {
       if (e.key === "devora_mock_storefront_v2" || e.key === "devora_storefront_sync_ping") {
         getStorefrontSettings().then((sf) => setStorefront(sf));
       }
+      if (e.key === "devora_mock_products_v1" || e.key === "devora_products_sync_ping") {
+        getProducts().then((p) => setProducts(p || []));
+      }
+      if (e.key === "devora_mock_categories_v1" || e.key === "devora_categories_sync_ping") {
+        getCategories().then((c) => setCategories(c || []));
+      }
     };
 
     window.addEventListener("devora_storefront_updated", handleStorefrontUpdate);
+    window.addEventListener("devora_settings_updated", handleStorefrontUpdate);
+    window.addEventListener("devora_products_updated", handleProductsUpdate);
+    window.addEventListener("devora_categories_updated", handleCategoriesUpdate);
     window.addEventListener("storage", handleStorageChange);
+
     return () => {
       window.removeEventListener("devora_storefront_updated", handleStorefrontUpdate);
+      window.removeEventListener("devora_settings_updated", handleStorefrontUpdate);
+      window.removeEventListener("devora_products_updated", handleProductsUpdate);
+      window.removeEventListener("devora_categories_updated", handleCategoriesUpdate);
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
@@ -483,18 +512,37 @@ export default function HomePage() {
             <p className="text-sm font-medium text-slate-500">Loading organic catalog...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 space-y-4">
-            <p className="text-lg font-bold text-slate-700">No products found matching your search</p>
-            <p className="text-sm text-slate-500">Try clearing your filters or search keywords.</p>
-            <button
-              onClick={() => {
-                setSelectedCategory("All");
-                setSearchQuery("");
-              }}
-              className="px-6 py-2.5 bg-brand-800 text-white text-xs font-bold rounded-xl cursor-pointer"
-            >
-              Reset Filters
-            </button>
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 space-y-4 max-w-xl mx-auto shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-brand-700 flex items-center justify-center mx-auto mb-2">
+              <Leaf className="w-7 h-7" />
+            </div>
+            <p className="text-xl font-bold text-slate-800">
+              {products.length === 0 ? "Catalog Getting Ready" : "No products found"}
+            </p>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              {products.length === 0
+                ? "Our fresh organic botanical inventory is currently being curated. You can add new products anytime from the Admin Portal."
+                : "No products matched your search or category filter. Try clearing filters to see all items."}
+            </p>
+            {products.length === 0 ? (
+              <Link
+                href="/admin/products"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-900/10 cursor-pointer"
+              >
+                <span>Add Products in Admin</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  setSelectedCategory("All");
+                  setSearchQuery("");
+                }}
+                className="px-6 py-2.5 bg-brand-800 text-white text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">

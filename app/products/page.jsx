@@ -27,18 +27,34 @@ function ProductsContent() {
     }
     loadData();
 
+    const handleLiveUpdate = () => {
+      loadData();
+    };
+
     const handleStorageChange = (e) => {
       if (
         e.key === "devora_mock_products_v1" ||
+        e.key === "devora_products_sync_ping" ||
         e.key === "devora_mock_categories_v1" ||
-        e.key === "devora_mock_offers_v1"
+        e.key === "devora_categories_sync_ping" ||
+        e.key === "devora_mock_offers_v1" ||
+        e.key === "devora_offers_sync_ping"
       ) {
         loadData();
       }
     };
 
+    window.addEventListener("devora_products_updated", handleLiveUpdate);
+    window.addEventListener("devora_categories_updated", handleLiveUpdate);
+    window.addEventListener("devora_offers_updated", handleLiveUpdate);
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("devora_products_updated", handleLiveUpdate);
+      window.removeEventListener("devora_categories_updated", handleLiveUpdate);
+      window.removeEventListener("devora_offers_updated", handleLiveUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProducts, addProduct, updateProduct, deleteProduct, getCategories } from "../../../lib/supabase";
+import { getProducts, addProduct, updateProduct, deleteProduct, getCategories, clearAllProducts, loadDemoProducts } from "../../../lib/supabase";
 import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
 
 export default function AdminProductsPage() {
@@ -122,6 +122,20 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (confirm("Are you sure you want to clear all products from the store? The catalog will be empty on the customer site.")) {
+      await clearAllProducts();
+      await loadData();
+    }
+  };
+
+  const handleLoadDemo = async () => {
+    if (confirm("Load standard sample demo products into the store?")) {
+      await loadDemoProducts();
+      await loadData();
+    }
+  };
+
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.category?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -136,13 +150,35 @@ export default function AdminProductsPage() {
           <p className="text-xs text-slate-500 mt-1">Manage catalog listings, prices, and imagery</p>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Product</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={handleClearAll}
+            className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all border border-red-200 cursor-pointer"
+            title="Remove all products from store"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Products</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLoadDemo}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all border border-slate-200 cursor-pointer"
+            title="Load sample demo products"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Load Demo Data</span>
+          </button>
+
+          <button
+            onClick={openAddModal}
+            className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Product</span>
+          </button>
+        </div>
       </div>
 
       {/* Search & Stats */}
