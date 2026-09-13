@@ -46,10 +46,6 @@ function isDemoProduct(product) {
   ];
   if (demoSlugs.includes(slugStr)) return true;
 
-  const keywords = ["kumkumadi", "bhringraj", "sambrani", "rose-water", "amla-hibiscus", "bhimseni-camphor", "organic rose water", "amla & hibiscus", "amla and hibiscus"];
-  for (const kw of keywords) {
-    if (slugStr.includes(kw) || nameStr.includes(kw)) return true;
-  }
   return false;
 }
 
