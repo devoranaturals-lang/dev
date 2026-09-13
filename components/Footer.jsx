@@ -25,6 +25,7 @@ import {
   isDemoContactEmail,
   isDemoContactPhone,
   isDemoContactAddress,
+  isDemoCategory,
 } from "../lib/supabase";
 
 function getSocialIcon(iconName) {
@@ -45,6 +46,8 @@ function getSocialIcon(iconName) {
       return Send;
     case "Globe":
       return Globe;
+    case "Share2":
+      return Share2;
     default:
       return Share2;
   }
@@ -52,7 +55,20 @@ function getSocialIcon(iconName) {
 
 export default function Footer() {
   const pathname = usePathname();
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_categories_v1");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((c) => !isDemoCategory(c));
+          }
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
   const [contactDetails, setContactDetails] = useState({
     store_name: "Devora Naturals",
     tagline: "Pure Organic Botanical",

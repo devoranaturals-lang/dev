@@ -20,7 +20,20 @@ export default function Navbar() {
 
 
 
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_categories_v1");
+        if (stored) {
+          const list = JSON.parse(stored);
+          if (Array.isArray(list)) {
+            return list.filter(c => c && !["cat-1", "cat-2", "cat-3"].includes(String(c.id)));
+          }
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
   const [branding, setBranding] = useState({
     store_name: "Devora Naturals",
     tagline: "Pure Organic Botanical",

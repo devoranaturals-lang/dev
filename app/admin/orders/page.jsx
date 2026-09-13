@@ -69,6 +69,20 @@ export default function AdminOrdersPage() {
     } else {
       loadOrders(false);
     }
+
+    const handleUpdate = () => loadOrders(false);
+    const handleStorage = (e) => {
+      if (e.key === "devora_mock_orders_v1" || e.key === "devora_orders_sync_ping" || e.key === "devora_deleted_orders") {
+        loadOrders(false);
+      }
+    };
+
+    window.addEventListener("devora_orders_updated", handleUpdate);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("devora_orders_updated", handleUpdate);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {

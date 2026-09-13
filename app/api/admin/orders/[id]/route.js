@@ -63,59 +63,44 @@ export async function DELETE(request, { params }) {
     }
 
     if (supabaseAdmin) {
-      // 1. Check if order exists in Supabase
-      const { data: existing, error: checkError } = await supabaseAdmin
-        .from("orders")
-        .select("id")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.warn("Error checking order existence in Supabase:", checkError);
-      }
-
-      if (existing) {
-        // Fetch order details to update customer stats later
-        const { data: orderDetails } = await supabaseAdmin
+      let orderDetails = null;
+      try {
+        const { data } = await supabaseAdmin
           .from("orders")
           .select("customer_email, total_amount")
           .eq("id", id)
           .maybeSingle();
+        if (data) orderDetails = data;
+      } catch (err) {
+        console.warn("Could not fetch orderDetails prior to deletion:", err);
+      }
 
-        // 2. Delete child order_items first to preserve foreign key constraints
+      // 1. Delete child order_items first to preserve foreign key constraints
+      try {
         const { error: itemsError } = await supabaseAdmin
           .from("order_items")
           .delete()
           .eq("order_id", id);
+        if (itemsError) console.warn("order_items deletion warning:", itemsError.message);
+      } catch (err) {
+        console.warn("order_items deletion exception:", err);
+      }
 
-        if (itemsError) {
-          console.warn("Error deleting order items:", itemsError);
-        }
-
-        // 3. Delete order from orders table
-        const { data: deletedOrders, error: deleteError } = await supabaseAdmin
+      // 2. Delete order from orders table
+      try {
+        const { error: deleteError } = await supabaseAdmin
           .from("orders")
           .delete()
-          .eq("id", id)
-          .select();
+          .eq("id", id);
+        if (deleteError) console.warn("orders deletion warning:", deleteError.message);
+      } catch (err) {
+        console.warn("orders deletion exception:", err);
+      }
 
-        if (deleteError) {
-          console.error("Supabase order deletion error:", deleteError);
-          return NextResponse.json(
-            { error: "Supabase Database Error: " + deleteError.message },
-            { status: 500 }
-          );
-        }
-
-        if (!deletedOrders || deletedOrders.length === 0) {
-          console.warn("Supabase deleteOrder select returned 0 rows, order may already be deleted or RLS filtered select.");
-        }
-
-        // 4. Update customer stats
-        if (orderDetails && orderDetails.customer_email) {
+      // 3. Update customer stats if details were found
+      if (orderDetails && orderDetails.customer_email) {
+        try {
           const email = orderDetails.customer_email.trim().toLowerCase();
-          
-          // Fetch current customer stats
           const { data: customer } = await supabaseAdmin
             .from("customers")
             .select("id, total_orders, total_spent")
@@ -131,7 +116,7 @@ export async function DELETE(request, { params }) {
               .update({ total_orders: newOrders, total_spent: newSpent })
               .eq("id", customer.id);
           }
-        }
+        } catch (_) {}
       }
     }
 

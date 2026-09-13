@@ -555,22 +555,23 @@ export async function POST(request) {
     }
 
     if (body.action === "delete_category" && body.id) {
-      const catId = String(body.id);
+      const catId = String(body.id).trim();
       if (serverSupabase) {
         try {
           await serverSupabase.from("categories").delete().eq("id", catId);
+          await serverSupabase.from("categories").delete().eq("slug", catId);
         } catch (_) {}
       }
 
       const existingCats = Array.isArray(current.categories) ? current.categories : [];
-      const filtered = existingCats.filter((c) => String(c.id) !== catId);
+      const filtered = existingCats.filter((c) => String(c.id) !== catId && String(c.slug || "") !== catId);
       await savePersistentStore({ categories: filtered });
 
       return NextResponse.json({ success: true });
     }
 
     if (body.action === "delete_order" && body.id) {
-      const orderId = String(body.id);
+      const orderId = String(body.id).trim();
       if (serverSupabase) {
         try {
           await serverSupabase.from("order_items").delete().eq("order_id", orderId);
