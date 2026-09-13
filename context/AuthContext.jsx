@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
           const parsed = JSON.parse(storedAdmin);
           const EIGHT_HOURS = 8 * 60 * 60 * 1000;
           if (parsed?.active && parsed?.ts && Date.now() - parsed.ts < EIGHT_HOURS) {
-            setUser({ email: parsed.email || "admin@devoranaturals.com", role: "admin" });
+            setUser({ email: parsed.email, role: "admin" });
             setIsAdmin(true);
           } else {
             // Expired — clean up
@@ -91,8 +91,7 @@ export function AuthProvider({ children }) {
   const loginAdmin = async (email, password) => {
     const normalizedEmail = (email || "").trim().toLowerCase();
 
-    // 1. Supabase auth check (primary login method)
-    let supabaseError = null;
+    // Supabase Authentication (Real Admin Login)
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -105,70 +104,22 @@ export function AuthProvider({ children }) {
           if (typeof window !== "undefined") {
             localStorage.setItem(
               "devora_admin_session",
-              JSON.stringify({ active: true, email: normalizedEmail, ts: Date.now() })
+              JSON.stringify({ active: true, email: normalizedEmail, id: data.user.id, ts: Date.now() })
             );
           }
           return data.user;
         }
         if (error) {
-          supabaseError = error.message;
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            throw new Error("Email not confirmed in Supabase. In Supabase Dashboard > Authentication > Users, check 'Auto Confirm User' or confirm via email.");
+          }
+          throw new Error(error.message);
         }
       } catch (err) {
-        supabaseError = err.message;
+        throw new Error(err.message || "Invalid admin email or password. Please check your credentials.");
       }
-    }
-
-    // 3. Registered Admins store (Local & offline fallback)
-    try {
-      const rawAdmins = typeof window !== "undefined" ? localStorage.getItem("devora_registered_admins") : null;
-      const adminsList = rawAdmins ? JSON.parse(rawAdmins) : [];
-      const found = adminsList.find(
-        (a) => a.email?.toLowerCase() === normalizedEmail && a.password === password
-      );
-      if (found) {
-        const adminUser = { id: found.id, email: found.email, name: found.name, role: "admin" };
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "devora_admin_session",
-            JSON.stringify({ active: true, email: found.email, name: found.name, ts: Date.now() })
-          );
-        }
-        setUser(adminUser);
-        setIsAdmin(true);
-        return adminUser;
-      }
-    } catch (e) {
-      console.error("Failed to check registered admins:", e);
-    }
-
-    // 4. Default Admin fallback for local dev / offline mode
-    const isDefaultAdmin =
-      (normalizedEmail === "admin@devoranaturals.com" || normalizedEmail === "admin") &&
-      (password === "admin123" || password === "admin" || password === "123456");
-
-    if (isDefaultAdmin) {
-      const defaultAdmin = {
-        id: "admin-master",
-        email: "admin@devoranaturals.com",
-        name: "Devora Administrator",
-        role: "admin",
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "devora_admin_session",
-          JSON.stringify({ active: true, email: "admin@devoranaturals.com", name: "Devora Administrator", ts: Date.now() })
-        );
-      }
-      setUser(defaultAdmin);
-      setIsAdmin(true);
-      return defaultAdmin;
-    }
-
-    if (supabaseError) {
-      if (supabaseError.toLowerCase().includes("email not confirmed")) {
-        throw new Error("Email not confirmed in Supabase. In Supabase Dashboard > Authentication > Users, check 'Auto Confirm User' or confirm via email.");
-      }
-      throw new Error(supabaseError);
+    } else {
+      throw new Error("Supabase is not configured. Please verify your environment configuration.");
     }
 
     throw new Error("Invalid admin email or password. Please check your credentials.");

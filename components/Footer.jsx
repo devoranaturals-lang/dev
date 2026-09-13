@@ -74,7 +74,6 @@ export default function Footer() {
       { id: "fcol2-1", label: "About Our Brand", href: "/about", is_active: true },
       { id: "fcol2-2", label: "Contact & Support", href: "/contact", is_active: true },
       { id: "fcol2-3", label: "Customer Account", href: "/account", is_active: true },
-      { id: "fcol2-4", label: "Admin Portal", href: "/admin", is_active: true },
     ],
     col3_heading: "Contact Us",
     show_contact_email: true,

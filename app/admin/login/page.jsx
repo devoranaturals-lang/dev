@@ -58,38 +58,17 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        {/* Quick Demo Credentials Helper */}
-        <div className="bg-brand-900/70 border border-brand-700/70 rounded-2xl p-4 text-xs space-y-2">
-          <div className="flex items-center justify-between text-brand-200">
-            <span className="font-semibold text-white">Default Admin Access:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("admin@devoranaturals.com");
-                setPassword("admin123");
-              }}
-              className="text-earth-400 hover:text-earth-300 font-bold underline cursor-pointer hover:scale-105 transition-transform"
-            >
-              ⚡ Quick Fill
-            </button>
-          </div>
-          <div className="text-[11px] text-brand-300 font-mono space-y-0.5 bg-brand-950/60 p-2.5 rounded-xl border border-brand-800">
-            <div><span className="text-brand-400">Email:</span> admin@devoranaturals.com</div>
-            <div><span className="text-brand-400">Password:</span> admin123</div>
-          </div>
-        </div>
-
         {/* Admin Sign In Form */}
         <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           
           <div>
-            <label className="block text-xs font-bold text-brand-200 mb-1">Admin Email or Username</label>
+            <label className="block text-xs font-bold text-brand-200 mb-1">Admin Email</label>
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-3.5 top-3 text-brand-400" />
               <input
-                type="text"
+                type="email"
                 required
-                placeholder="admin@devoranaturals.com or admin"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="new-password"

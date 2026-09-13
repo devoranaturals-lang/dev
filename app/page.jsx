@@ -542,28 +542,20 @@ export default function HomePage() {
               <Leaf className="w-7 h-7" />
             </div>
             <p className="text-xl font-bold text-slate-800">
-              {products.length === 0 ? "Catalog Getting Ready" : "No products found"}
+              {products.length === 0 ? "New Collection Coming Soon" : "No products found"}
             </p>
             <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
               {products.length === 0
-                ? "Our fresh organic botanical inventory is currently being curated. You can add new products anytime from the Admin Portal."
+                ? "Our pure organic botanical products are being crafted with fresh harvest. Please check back shortly!"
                 : "No products matched your search or category filter. Try clearing filters to see all items."}
             </p>
-            {products.length === 0 ? (
-              <Link
-                href="/admin/products"
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-900/10 cursor-pointer"
-              >
-                <span>Add Products in Admin</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            ) : (
+            {products.length > 0 && (
               <button
                 onClick={() => {
                   setSelectedCategory("All");
                   setSearchQuery("");
                 }}
-                className="px-6 py-2.5 bg-brand-800 text-white text-xs font-bold rounded-xl cursor-pointer"
+                className="px-6 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl cursor-pointer transition-colors"
               >
                 Reset Filters
               </button>
