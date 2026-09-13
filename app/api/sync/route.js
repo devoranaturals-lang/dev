@@ -41,6 +41,31 @@ function isDemoCategory(category) {
   return ["cat-1", "cat-2", "cat-3"].includes(idStr);
 }
 
+function isDemoCustomer(customer) {
+  if (!customer) return false;
+  const id = String(customer.id || "").toLowerCase();
+  const email = String(customer.email || "").toLowerCase();
+  const name = String(customer.name || "").toLowerCase();
+  if (id.startsWith("cust-") || id.startsWith("demo-")) return true;
+  if (["aarav@example.com", "priya@example.com", "vikram@example.com", "sneha@example.com"].includes(email)) return true;
+  if (email.endsWith("@example.com")) return true;
+  if (["aarav sharma", "priya nair", "vikram mehta", "sneha patel"].includes(name)) return true;
+  return false;
+}
+
+function isDemoOrder(order) {
+  if (!order) return false;
+  const id = String(order.id || "").toLowerCase();
+  const orderNumber = String(order.order_number || "").toLowerCase();
+  const custEmail = String(order.customer_email || (order.customer && order.customer.email) || "").toLowerCase();
+  if (id.startsWith("ord-demo") || id.startsWith("demo-")) return true;
+  if (["dev-10821", "dev-10820", "dev-10819", "dev-10818"].includes(id)) return true;
+  if (["dev-10821", "dev-10820", "dev-10819", "dev-10818"].includes(orderNumber)) return true;
+  if (["aarav@example.com", "priya@example.com", "vikram@example.com", "sneha@example.com"].includes(custEmail)) return true;
+  if (custEmail.endsWith("@example.com")) return true;
+  return false;
+}
+
 // In-memory cache for fast fallback
 let memoryStore = null;
 
@@ -58,6 +83,12 @@ async function getPersistentStore() {
     if (Array.isArray(memoryStore.categories)) {
       memoryStore.categories = memoryStore.categories.filter(c => !isDemoCategory(c));
     }
+    if (Array.isArray(memoryStore.customers)) {
+      memoryStore.customers = memoryStore.customers.filter(c => !isDemoCustomer(c));
+    }
+    if (Array.isArray(memoryStore.orders)) {
+      memoryStore.orders = memoryStore.orders.filter(o => !isDemoOrder(o));
+    }
     return memoryStore;
   } catch (err) {
     const initialStore = {
@@ -66,8 +97,8 @@ async function getPersistentStore() {
       offers: DEFAULT_OFFERS,
       settings: DEFAULT_SETTINGS,
       storefront: DEFAULT_STOREFRONT_SETTINGS,
-      customers: DEFAULT_CUSTOMERS,
-      orders: DEFAULT_ORDERS,
+      customers: DEFAULT_CUSTOMERS.filter(c => !isDemoCustomer(c)),
+      orders: DEFAULT_ORDERS.filter(o => !isDemoOrder(o)),
       updated_at: new Date().toISOString(),
     };
 
@@ -89,6 +120,12 @@ async function savePersistentStore(updated) {
   }
   if (Array.isArray(updated.categories)) {
     updated.categories = updated.categories.filter(c => !isDemoCategory(c));
+  }
+  if (Array.isArray(updated.customers)) {
+    updated.customers = updated.customers.filter(c => !isDemoCustomer(c));
+  }
+  if (Array.isArray(updated.orders)) {
+    updated.orders = updated.orders.filter(o => !isDemoOrder(o));
   }
 
   memoryStore = {
@@ -152,11 +189,15 @@ async function syncToSupabaseBackground(type, data) {
             await serverSupabase.from("products").upsert({ ...payload, id }, { onConflict: "id" });
           } else {
             // Check if product already exists by slug or name before inserting
-            const { data: existing } = await serverSupabase
-              .from("products")
-              .select("id")
-              .or(`slug.eq.${payload.slug},name.eq.${payload.name}`)
-              .maybeSingle();
+            let existing = null;
+            if (payload.slug) {
+              const { data } = await serverSupabase.from("products").select("id").eq("slug", payload.slug).maybeSingle();
+              if (data) existing = data;
+            }
+            if (!existing && payload.name) {
+              const { data } = await serverSupabase.from("products").select("id").eq("name", payload.name).maybeSingle();
+              if (data) existing = data;
+            }
             if (existing?.id) {
               await serverSupabase.from("products").update(payload).eq("id", existing.id);
             } else {
@@ -174,11 +215,15 @@ async function syncToSupabaseBackground(type, data) {
             await serverSupabase.from("categories").upsert({ ...payload, id }, { onConflict: "id" });
           } else {
             // Check if category already exists by slug or name before inserting
-            const { data: existing } = await serverSupabase
-              .from("categories")
-              .select("id")
-              .or(`slug.eq.${payload.slug},name.eq.${payload.name}`)
-              .maybeSingle();
+            let existing = null;
+            if (payload.slug) {
+              const { data } = await serverSupabase.from("categories").select("id").eq("slug", payload.slug).maybeSingle();
+              if (data) existing = data;
+            }
+            if (!existing && payload.name) {
+              const { data } = await serverSupabase.from("categories").select("id").eq("name", payload.name).maybeSingle();
+              if (data) existing = data;
+            }
             if (existing?.id) {
               await serverSupabase.from("categories").update(payload).eq("id", existing.id);
             } else {
@@ -231,6 +276,7 @@ export async function GET() {
           serverSupabase.from("categories").select("*").order("name", { ascending: true }),
           serverSupabase.from("offers").select("*").order("created_at", { ascending: false }),
           serverSupabase.from("storefront_settings").select("*").limit(1).maybeSingle().catch(() => ({ data: null, error: true })),
+          serverSupabase.from("settings").select("*").limit(1).maybeSingle().catch(() => ({ data: null, error: true })),
         ]);
 
         const timeoutPromise = new Promise((resolve) =>
@@ -240,7 +286,7 @@ export async function GET() {
         const result = await Promise.race([fetchPromise, timeoutPromise]);
 
         if (result !== "TIMEOUT") {
-          const [prodRes, catRes, offRes, sfRes] = result;
+          const [prodRes, catRes, offRes, sfRes, setRes] = result;
 
           if (!prodRes.error && Array.isArray(prodRes.data)) {
             store.products = prodRes.data.filter((p) => !isDemoProduct(p));
@@ -268,6 +314,17 @@ export async function GET() {
               testimonials: Array.isArray(remoteExtended.testimonials) ? remoteExtended.testimonials : (store.storefront?.testimonials || []),
               faqs: Array.isArray(remoteExtended.faqs) ? remoteExtended.faqs : (store.storefront?.faqs || DEFAULT_STOREFRONT_SETTINGS.faqs),
               updated_at: sfRes.data.updated_at || store.storefront?.updated_at,
+            };
+          }
+          if (setRes && !setRes.error && setRes.data) {
+            store.settings = {
+              ...(store.settings || DEFAULT_SETTINGS),
+              ...setRes.data,
+              email: setRes.data.email !== undefined ? setRes.data.email : (store.settings?.email || ""),
+              phone: setRes.data.phone !== undefined ? setRes.data.phone : (store.settings?.phone || ""),
+              address: setRes.data.address !== undefined ? setRes.data.address : (store.settings?.address || ""),
+              whatsapp: setRes.data.whatsapp !== undefined ? setRes.data.whatsapp : (store.settings?.whatsapp || ""),
+              support_hours: setRes.data.support_hours !== undefined ? setRes.data.support_hours : (store.settings?.support_hours || ""),
             };
           }
         }
@@ -375,11 +432,23 @@ export async function POST(request) {
       if (serverSupabase) {
         try {
           // Check if category already exists by slug or name
-          const { data: existing } = await serverSupabase
-            .from("categories")
-            .select("*")
-            .or(`name.eq.${supabasePayload.name},slug.eq.${supabasePayload.slug}`)
-            .maybeSingle();
+          let existing = null;
+          if (supabasePayload.slug) {
+            const { data } = await serverSupabase
+              .from("categories")
+              .select("*")
+              .eq("slug", supabasePayload.slug)
+              .maybeSingle();
+            if (data) existing = data;
+          }
+          if (!existing && supabasePayload.name) {
+            const { data } = await serverSupabase
+              .from("categories")
+              .select("*")
+              .eq("name", supabasePayload.name)
+              .maybeSingle();
+            if (data) existing = data;
+          }
 
           if (existing) {
             savedCat = existing;
@@ -450,6 +519,24 @@ export async function POST(request) {
       const existingCats = Array.isArray(current.categories) ? current.categories : [];
       const filtered = existingCats.filter((c) => String(c.id) !== catId);
       await savePersistentStore({ categories: filtered });
+
+      return NextResponse.json({ success: true });
+    }
+
+    if (body.action === "delete_order" && body.id) {
+      const orderId = String(body.id);
+      if (serverSupabase) {
+        try {
+          await serverSupabase.from("order_items").delete().eq("order_id", orderId);
+          await serverSupabase.from("orders").delete().eq("id", orderId);
+        } catch (err) {
+          console.warn("serverSupabase delete_order error:", err.message);
+        }
+      }
+
+      const existingOrders = Array.isArray(current.orders) ? current.orders : [];
+      const filtered = existingOrders.filter((o) => String(o.id) !== orderId && String(o.order_number || "") !== orderId);
+      await savePersistentStore({ orders: filtered });
 
       return NextResponse.json({ success: true });
     }

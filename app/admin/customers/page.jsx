@@ -7,6 +7,8 @@ import {
   addCustomer,
   deleteCustomer,
   getOrders,
+  isDemoCustomer,
+  isDemoOrder,
 } from "../../../lib/supabase";
 import {
   Users,
@@ -43,7 +45,10 @@ export default function AdminCustomersPage() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("devora_mock_customers_v1");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const list = JSON.parse(stored);
+          return Array.isArray(list) ? list.filter(c => !isDemoCustomer(c)) : [];
+        }
       } catch (_) {}
     }
     return [];
@@ -52,7 +57,10 @@ export default function AdminCustomersPage() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("devora_mock_orders_v1");
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const list = JSON.parse(stored);
+          return Array.isArray(list) ? list.filter(o => !isDemoOrder(o)) : [];
+        }
       } catch (_) {}
     }
     return [];
@@ -92,8 +100,8 @@ export default function AdminCustomersPage() {
     if (showLoading) setLoading(true);
     try {
       const [custData, ordersData] = await Promise.all([getCustomers(), getOrders()]);
-      if (custData) setCustomers(custData);
-      if (ordersData) setOrders(ordersData);
+      if (custData) setCustomers(custData.filter(c => !isDemoCustomer(c)));
+      if (ordersData) setOrders(ordersData.filter(o => !isDemoOrder(o)));
     } catch (err) {
       console.error("Failed to load customers or orders:", err);
     } finally {

@@ -93,7 +93,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("8608540400");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [storeSettings, setStoreSettings] = useState(null);
 
   const [couponCode, setCouponCode] = useState("");
@@ -406,9 +406,12 @@ ${appliedCoupon ? `*Coupon Discount on Total Order (${appliedCoupon.code || appl
 Please confirm my order. Thank you!`;
 
       const encodedMessage = encodeURIComponent(message);
-      const waUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-      
-      window.open(waUrl, '_blank');
+      if (whatsappNumber) {
+        const cleanNumber = whatsappNumber.replace(/\D/g, "");
+        const formattedWa = cleanNumber.startsWith("91") ? cleanNumber : `91${cleanNumber}`;
+        const waUrl = `https://wa.me/${formattedWa}?text=${encodedMessage}`;
+        window.open(waUrl, '_blank');
+      }
       
       setOrderSuccess({ 
         ...created, 

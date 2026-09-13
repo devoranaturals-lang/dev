@@ -145,7 +145,7 @@ export default function ProductDetailPage() {
   const returnDays = product.return_period_days || storeSettings?.return_window_days || 7;
   const freeThreshold = Number(storeSettings?.free_shipping_threshold !== undefined ? storeSettings.free_shipping_threshold : 499);
   const standardShipping = Number(storeSettings?.standard_shipping_charge !== undefined ? storeSettings.standard_shipping_charge : 50);
-  const whatsappNumber = storeSettings?.whatsapp || "8608540400";
+  const whatsappNumber = storeSettings?.whatsapp || "";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">

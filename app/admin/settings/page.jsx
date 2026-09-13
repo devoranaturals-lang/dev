@@ -73,7 +73,7 @@ const SOCIAL_PLATFORM_PRESETS = [
   { platform: "Instagram", title: "Instagram", icon: "Instagram", placeholder: "https://instagram.com/devoranaturals" },
   { platform: "Facebook", title: "Facebook", icon: "Facebook", placeholder: "https://facebook.com/devoranaturals" },
   { platform: "YouTube", title: "YouTube", icon: "Youtube", placeholder: "https://youtube.com/@devoranaturals" },
-  { platform: "WhatsApp", title: "WhatsApp Chat", icon: "MessageCircle", placeholder: "https://wa.me/918608540400" },
+  { platform: "WhatsApp", title: "WhatsApp Chat", icon: "MessageCircle", placeholder: "https://wa.me/91XXXXXXXXXX" },
   { platform: "Twitter / X", title: "Twitter / X", icon: "Twitter", placeholder: "https://x.com/devoranaturals" },
   { platform: "LinkedIn", title: "LinkedIn Page", icon: "Linkedin", placeholder: "https://linkedin.com/company/devora" },
   { platform: "Telegram", title: "Telegram Channel", icon: "Send", placeholder: "https://t.me/devoranaturals" },
@@ -97,10 +97,10 @@ export default function AdminSettingsPage() {
     store_name: "Devora Naturals",
     tagline: "Pure Organic Botanical",
     logo_url: "",
-    email: "support@devoranaturals.com",
-    phone: "+91 8608540400",
-    address: "Kerala Botanical Organic Farm, India",
-    whatsapp: "8608540400",
+    email: "",
+    phone: "",
+    address: "",
+    whatsapp: "",
     free_shipping_threshold: 499,
     state_shipping_enabled: true,
     shipping_charge_tamilnadu: 50,
@@ -109,12 +109,12 @@ export default function AdminSettingsPage() {
     delivery_estimate: "Tamil Nadu: 1-2 Days | Other States: 3-5 Business Days",
     support_hours: "Mon - Sat: 9:00 AM - 7:00 PM IST",
     order_prefix: "DEV-",
-    instagram_url: "https://instagram.com/devoranaturals",
-    facebook_url: "https://facebook.com/devoranaturals",
-    youtube_url: "https://youtube.com/@devoranaturals",
+    instagram_url: "",
+    facebook_url: "",
+    youtube_url: "",
     // Social Links & Channels Management
     social_links_enabled: true,
-    social_links: DEFAULT_SOCIAL_LINKS,
+    social_links: [],
     // Return & Replacement switch & details
     return_policy_enabled: true,
     return_window_days: 7,
@@ -533,7 +533,7 @@ export default function AdminSettingsPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="support@devoranaturals.com"
+                    placeholder="contact@devoranaturals.com"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-700"
                   />
                 </div>
@@ -548,7 +548,7 @@ export default function AdminSettingsPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="+91 8608540400"
+                    placeholder="+91 9876543210"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-700"
                   />
                 </div>
@@ -1166,7 +1166,7 @@ export default function AdminSettingsPage() {
                     name="whatsapp"
                     value={formData.whatsapp}
                     onChange={handleChange}
-                    placeholder="918608540400"
+                    placeholder="919876543210"
                     className="w-full pl-7 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>

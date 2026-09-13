@@ -50,9 +50,9 @@ export default function Footer() {
     store_name: "Devora Naturals",
     tagline: "Pure Organic Botanical",
     logo_url: "",
-    email: "support@devoranaturals.com",
-    phone: "+91 8608540400",
-    address: "Kerala Botanical Organic Farm, India",
+    email: "",
+    phone: "",
+    address: "",
     social_links_enabled: true,
     social_links: [],
   });
@@ -64,16 +64,12 @@ export default function Footer() {
     col1_heading: "Categories",
     col1_show_dynamic_categories: true,
     col1_links: [
-      { id: "fcol1-1", label: "Skin Care Essentials", href: "/products?category=Skin Care", is_active: true },
-      { id: "fcol1-2", label: "Ayurvedic Hair Oils", href: "/products?category=Hair Care", is_active: true },
-      { id: "fcol1-3", label: "Sacred Pooja Dhoop & Resins", href: "/products?category=Pooja Items", is_active: true },
-      { id: "fcol1-4", label: "View Full Catalog", href: "/products", is_active: true },
+      { id: "fcol1-all", label: "View Full Catalog", href: "/products", is_active: true },
     ],
     col2_heading: "Devora Naturals",
     col2_links: [
       { id: "fcol2-1", label: "About Our Brand", href: "/about", is_active: true },
       { id: "fcol2-2", label: "Contact & Support", href: "/contact", is_active: true },
-      { id: "fcol2-3", label: "Customer Account", href: "/account", is_active: true },
     ],
     col3_heading: "Contact Us",
     show_contact_email: true,
@@ -109,13 +105,17 @@ export default function Footer() {
 
     const handleSettingsUpdate = (e) => {
       if (e?.type === "devora_categories_updated") {
-        getCategories().then(cats => {
-          if (cats) setCategories(cats);
-        }).catch(console.error);
+        if (e.detail && Array.isArray(e.detail)) {
+          setCategories(e.detail);
+        } else {
+          getCategories(true).then((cats) => {
+            if (cats) setCategories(cats);
+          }).catch(() => {});
+        }
         return;
       }
       if (e?.detail) {
-        if (e.detail.email || e.detail.phone || e.detail.address || e.detail.store_name || e.detail.logo_url !== undefined || e.detail.social_links) {
+        if (e.detail.email !== undefined || e.detail.phone !== undefined || e.detail.address !== undefined || e.detail.store_name || e.detail.logo_url !== undefined || e.detail.social_links) {
           setContactDetails((prev) => ({ ...prev, ...e.detail }));
         }
         if (e.detail.footer) {
@@ -168,7 +168,18 @@ export default function Footer() {
           ].filter(Boolean))
     : [];
 
-  // Determine Column 1 links
+  // Determine Column 1 links (Categories)
+  const isDemoCatLink = (l) => {
+    const id = String(l?.id || "");
+    const label = String(l?.label || "").toLowerCase();
+    return (
+      ["fcol1-1", "fcol1-2", "fcol1-3"].includes(id) ||
+      label.includes("skin care essentials") ||
+      label.includes("ayurvedic hair oils") ||
+      label.includes("sacred pooja dhoop")
+    );
+  };
+
   const dynamicCategoryLinks = (footerConfig.col1_show_dynamic_categories !== false && categories.length > 0)
     ? categories.map((cat) => ({
         id: `cat-${cat.id || cat.name}`,
@@ -177,13 +188,16 @@ export default function Footer() {
       }))
     : [];
 
-  const customCol1Links = (Array.isArray(footerConfig.col1_links) ? footerConfig.col1_links : []).filter((l) => l.is_active !== false);
+  const customCol1Links = (Array.isArray(footerConfig.col1_links) ? footerConfig.col1_links : [])
+    .filter((l) => l.is_active !== false && !isDemoCatLink(l));
+
   const finalCol1Links = dynamicCategoryLinks.length > 0
     ? [...dynamicCategoryLinks, ...customCol1Links.filter((l) => !dynamicCategoryLinks.some((c) => c.label.toLowerCase() === l.label.toLowerCase()))]
-    : customCol1Links;
+    : (customCol1Links.length > 0 ? customCol1Links : [{ id: "fcol1-all", label: "View Full Catalog", href: "/products" }]);
 
-  // Determine Column 2 links
-  const finalCol2Links = (Array.isArray(footerConfig.col2_links) ? footerConfig.col2_links : []).filter((l) => l.is_active !== false);
+  // Determine Column 2 links (strictly exclude Customer Account)
+  const finalCol2Links = (Array.isArray(footerConfig.col2_links) ? footerConfig.col2_links : [])
+    .filter((l) => l.is_active !== false && String(l.id) !== "fcol2-3" && (l.label || "").toLowerCase() !== "customer account" && (l.href || "") !== "/account");
 
   return (
     <footer className="bg-brand-900 text-brand-100 border-t border-brand-800 pt-16 pb-12 mt-20">

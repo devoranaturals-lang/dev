@@ -46,12 +46,12 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [contactDetails, setContactDetails] = useState({
-    email: "support@devoranaturals.com",
-    phone: "+91 8608540400",
-    address: "Kerala Botanical Organic Farm, India",
+    email: "",
+    phone: "",
+    address: "",
     social_links_enabled: true,
     social_links: [],
-    support_hours: "Mon - Sat: 9:00 AM - 7:00 PM IST",
+    support_hours: "",
   });
 
   useEffect(() => {
@@ -90,11 +90,12 @@ export default function ContactPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const ownerEmail = contactDetails.email || "support@devoranaturals.com";
-    const subject = encodeURIComponent(`New Contact Message from ${form.name}`);
-    const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`);
-    
-    window.location.href = `mailto:${ownerEmail}?subject=${subject}&body=${body}`;
+    const ownerEmail = contactDetails.email;
+    if (ownerEmail) {
+      const subject = encodeURIComponent(`New Contact Message from ${form.name}`);
+      const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`);
+      window.location.href = `mailto:${ownerEmail}?subject=${subject}&body=${body}`;
+    }
     
     setSubmitted(true);
   };
@@ -111,6 +112,8 @@ export default function ContactPage() {
           ].filter(Boolean))
     : [];
 
+  const hasAnyContactInfo = contactDetails.email || contactDetails.phone || contactDetails.address || contactDetails.support_hours;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
       <div className="text-center max-w-2xl mx-auto space-y-3">
@@ -126,35 +129,41 @@ export default function ContactPage() {
           <h2 className="text-2xl font-bold">Contact Information</h2>
 
           <div className="space-y-6 text-sm">
-            <div className="flex items-start gap-4">
-              <div className="p-2.5 bg-brand-800 rounded-xl text-brand-200">
-                <Mail className="w-5 h-5" />
+            {contactDetails.email && (
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-brand-800 rounded-xl text-brand-200">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-xs text-brand-300 uppercase">Email Support</p>
+                  <p className="font-bold text-white">{contactDetails.email}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-xs text-brand-300 uppercase">Email Support</p>
-                <p className="font-bold text-white">{contactDetails.email}</p>
-              </div>
-            </div>
+            )}
 
-            <div className="flex items-start gap-4">
-              <div className="p-2.5 bg-brand-800 rounded-xl text-brand-200">
-                <Phone className="w-5 h-5" />
+            {contactDetails.phone && (
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-brand-800 rounded-xl text-brand-200">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-xs text-brand-300 uppercase">Customer Care</p>
+                  <p className="font-bold text-white">{contactDetails.phone}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-xs text-brand-300 uppercase">Customer Care</p>
-                <p className="font-bold text-white">{contactDetails.phone}</p>
-              </div>
-            </div>
+            )}
 
-            <div className="flex items-start gap-4">
-              <div className="p-2.5 bg-brand-800 rounded-xl text-brand-200">
-                <MapPin className="w-5 h-5" />
+            {contactDetails.address && (
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-brand-800 rounded-xl text-brand-200">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-xs text-brand-300 uppercase">Location</p>
+                  <p className="font-bold text-white">{contactDetails.address}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-xs text-brand-300 uppercase">Location</p>
-                <p className="font-bold text-white">{contactDetails.address}</p>
-              </div>
-            </div>
+            )}
 
             {contactDetails.support_hours && (
               <div className="flex items-start gap-4">
@@ -166,6 +175,12 @@ export default function ContactPage() {
                   <p className="font-bold text-white">{contactDetails.support_hours}</p>
                 </div>
               </div>
+            )}
+
+            {!hasAnyContactInfo && (
+              <p className="text-brand-300/80 text-sm italic">
+                Contact information will appear here once updated in the admin settings panel.
+              </p>
             )}
           </div>
 

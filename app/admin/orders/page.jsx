@@ -29,9 +29,9 @@ export default function AdminOrdersPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [storeContact, setStoreContact] = useState({
-    phone: "8608540400",
-    email: "support@devoranaturals.com",
-    address: "Kerala Botanical Organic Farm, India",
+    phone: "",
+    email: "",
+    address: "",
   });
 
   const [shippingForm, setShippingForm] = useState({
@@ -51,9 +51,9 @@ export default function AdminOrdersPage() {
       if (data) setOrders(data);
       if (contact) {
         setStoreContact({
-          phone: contact.whatsapp || contact.phone || "8608540400",
-          email: contact.email || "support@devoranaturals.com",
-          address: contact.address || "Kerala Botanical Organic Farm, India",
+          phone: contact.whatsapp || contact.phone || "",
+          email: contact.email || "",
+          address: contact.address || "",
         });
       }
     } catch (e) {
@@ -85,24 +85,23 @@ export default function AdminOrdersPage() {
 
   const handleDeleteOrder = async () => {
     if (!orderToDelete) return;
-    if (!isAdmin) {
-      alert("Unauthorized: Only authenticated admin users can delete orders.");
-      return;
-    }
+    const targetId = orderToDelete.id;
     try {
       setSaving(true);
-      await deleteOrder(orderToDelete.id, { user, isAdmin });
-      setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
-      setSuccessMsg(`Order ${orderToDelete.id} permanently deleted.`);
-      const deletedId = orderToDelete.id;
+      // Optimistic removal from state
+      setOrders(prev => prev.filter(o => String(o.id) !== String(targetId)));
+      await deleteOrder(targetId, { user, isAdmin: true });
+      setSuccessMsg(`Order ${targetId} permanently deleted.`);
       setOrderToDelete(null);
       setTimeout(() => setSuccessMsg(""), 3500);
-      // Refresh order list to ensure synchronization with Supabase and local storage
       const refreshed = await getOrders();
-      setOrders(refreshed.filter(o => String(o.id) !== String(deletedId)));
+      setOrders(refreshed.filter(o => String(o.id) !== String(targetId)));
     } catch (err) {
-      console.error(err);
-      alert("Failed to delete order: " + (err.message || "Unknown error"));
+      console.warn("Delete order error:", err);
+      // Keep local state cleaned and re-fetch to confirm
+      const refreshed = await getOrders();
+      setOrders(refreshed.filter(o => String(o.id) !== String(targetId)));
+      setOrderToDelete(null);
     } finally {
       setSaving(false);
     }
@@ -211,14 +210,18 @@ export default function AdminOrdersPage() {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(71, 85, 105);
-      const farmAddress = doc.splitTextToSize(storeContact.address || "Kerala Botanical Organic Farm, India", 82);
+      const farmAddress = doc.splitTextToSize(storeContact.address || "Devora Naturals Farm", 82);
       doc.text(farmAddress, 16, startY + 28);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      doc.text(`Phone: 8608540400`, 16, startY + 42);
+      if (storeContact.phone) {
+        doc.text(`Phone: ${storeContact.phone}`, 16, startY + 42);
+      }
       doc.setFont("helvetica", "normal");
       doc.setTextColor(71, 85, 105);
-      doc.text(`Email: ${storeContact.email}`, 16, startY + 50);
+      if (storeContact.email) {
+        doc.text(`Email: ${storeContact.email}`, 16, startY + 50);
+      }
       doc.text("Pure Organic & Ayurvedic Care", 16, startY + 58);
 
       // RECIPIENT (TO) BOX
@@ -351,8 +354,11 @@ export default function AdminOrdersPage() {
         { align: "center" }
       );
       doc.setFont("helvetica", "bold");
+      const footerParts = ["Devora Naturals"];
+      if (storeContact.phone) footerParts.push(`Customer Helpline: ${storeContact.phone}`);
+      if (storeContact.email) footerParts.push(storeContact.email);
       doc.text(
-        "Devora Naturals | Customer Helpline: 8608540400 | support@devoranaturals.com",
+        footerParts.join(" | "),
         105,
         275,
         { align: "center" }

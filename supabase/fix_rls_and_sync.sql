@@ -147,6 +147,26 @@ DELETE FROM public.offers
 WHERE id::text IN ('off-devora10', 'off-flat100', 'off-bogo', 'off-festive15', 'off-welcome10')
    OR "discountCode" IN ('DEVORA10', 'FLAT100', 'BUY2GET1', 'FESTIVE15', 'WELCOME10');
 
+DELETE FROM public.customers
+WHERE id::text IN ('cust-1', 'cust-2', 'cust-3', 'cust-4')
+   OR email IN ('aarav@example.com', 'priya@example.com', 'vikram@example.com', 'sneha@example.com')
+   OR email LIKE '%@example.com';
+
+DELETE FROM public.order_items
+WHERE order_id::text IN ('DEV-10821', 'DEV-10820', 'DEV-10819', 'DEV-10818')
+   OR order_id::text LIKE 'ord-demo-%'
+   OR order_id::text LIKE 'demo-%';
+
+DELETE FROM public.orders
+WHERE id::text IN ('DEV-10821', 'DEV-10820', 'DEV-10819', 'DEV-10818')
+   OR id::text LIKE 'ord-demo-%'
+   OR id::text LIKE 'demo-%'
+   OR customer_email LIKE '%@example.com';
+
+UPDATE public.settings
+SET email = '', phone = '', address = '', whatsapp = ''
+WHERE email = 'support@devoranaturals.com' OR phone = '+91 8608540400';
+
 -- 8. Ensure at least 1 storefront row exists with clean defaults
 INSERT INTO public.storefront_settings (
     "heroBgGradientStart",
