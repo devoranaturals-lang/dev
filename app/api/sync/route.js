@@ -230,6 +230,7 @@ export async function GET() {
           serverSupabase.from("products").select("*").order("created_at", { ascending: false }),
           serverSupabase.from("categories").select("*").order("name", { ascending: true }),
           serverSupabase.from("offers").select("*").order("created_at", { ascending: false }),
+          serverSupabase.from("storefront_settings").select("*").limit(1).maybeSingle().catch(() => ({ data: null, error: true })),
         ]);
 
         const timeoutPromise = new Promise((resolve) =>
@@ -239,7 +240,7 @@ export async function GET() {
         const result = await Promise.race([fetchPromise, timeoutPromise]);
 
         if (result !== "TIMEOUT") {
-          const [prodRes, catRes, offRes] = result;
+          const [prodRes, catRes, offRes, sfRes] = result;
 
           if (!prodRes.error && Array.isArray(prodRes.data)) {
             store.products = prodRes.data.filter((p) => !isDemoProduct(p));
@@ -253,6 +254,21 @@ export async function GET() {
                 o &&
                 !["off-devora10", "off-flat100", "off-bogo", "off-festive15", "off-welcome10"].includes(String(o.id))
             );
+          }
+          if (sfRes && !sfRes.error && sfRes.data) {
+            const remoteExtended = (sfRes.data.extended_data && typeof sfRes.data.extended_data === "object") ? sfRes.data.extended_data : {};
+            store.storefront = {
+              ...(store.storefront || DEFAULT_STOREFRONT_SETTINGS),
+              ...sfRes.data,
+              ...remoteExtended,
+              announcements: Array.isArray(remoteExtended.announcements) ? remoteExtended.announcements : (store.storefront?.announcements || DEFAULT_STOREFRONT_SETTINGS.announcements),
+              hero_cards: Array.isArray(remoteExtended.hero_cards) ? remoteExtended.hero_cards : (store.storefront?.hero_cards || []),
+              value_props: Array.isArray(remoteExtended.value_props) ? remoteExtended.value_props : (store.storefront?.value_props || DEFAULT_STOREFRONT_SETTINGS.value_props),
+              promos_list: Array.isArray(remoteExtended.promos_list) ? remoteExtended.promos_list : (store.storefront?.promos_list || []),
+              testimonials: Array.isArray(remoteExtended.testimonials) ? remoteExtended.testimonials : (store.storefront?.testimonials || []),
+              faqs: Array.isArray(remoteExtended.faqs) ? remoteExtended.faqs : (store.storefront?.faqs || DEFAULT_STOREFRONT_SETTINGS.faqs),
+              updated_at: sfRes.data.updated_at || store.storefront?.updated_at,
+            };
           }
         }
       } catch (e) {

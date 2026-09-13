@@ -4,7 +4,47 @@
 -- Safe, idempotent, and immediately resolves all permission and sync issues.
 -- ==============================================================================
 
--- 1. Ensure required timestamp and profile columns exist
+-- 1. Ensure all core tables exist
+CREATE TABLE IF NOT EXISTS public.storefront_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "heroBgGradientStart" TEXT DEFAULT '#064e3b',
+    "heroBgGradientEnd" TEXT DEFAULT '#065f46',
+    "heroBgImage" TEXT DEFAULT '',
+    "heroHeading" TEXT DEFAULT 'Natural Care For Your Skin, Hair & Soul',
+    "heroDescription" TEXT DEFAULT 'Elevate your daily self-care ritual with handcrafted Kumkumadi oils, wild-harvested Bhringraj scalp tonics, and sacred organic Sambrani dhoop.',
+    "bestsellerEnabled" BOOLEAN DEFAULT false,
+    "bestsellerTitle" TEXT DEFAULT '',
+    "bestsellerSubtitle" TEXT DEFAULT '',
+    "bestsellerImage" TEXT DEFAULT '',
+    "promoBannerEnabled" BOOLEAN DEFAULT false,
+    "promoBannerTitle" TEXT DEFAULT '',
+    "promoBannerSubtitle" TEXT DEFAULT '',
+    "promoBannerImage" TEXT DEFAULT '',
+    extended_data JSONB DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_name TEXT DEFAULT 'Devora Naturals',
+    tagline TEXT DEFAULT 'Pure Organic Botanical',
+    email TEXT DEFAULT 'contact@devoranaturals.com',
+    phone TEXT DEFAULT '+91 98765 43210',
+    address TEXT DEFAULT '123 Herbal Way, Kerala, India',
+    currency TEXT DEFAULT '₹',
+    currency_code TEXT DEFAULT 'INR',
+    tax_rate NUMERIC(5, 2) DEFAULT 0.00,
+    shipping_fee NUMERIC(10, 2) DEFAULT 50.00,
+    free_shipping_threshold NUMERIC(10, 2) DEFAULT 499.00,
+    enable_cod BOOLEAN DEFAULT true,
+    enable_online_payment BOOLEAN DEFAULT true,
+    logo_url TEXT DEFAULT '',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 2. Ensure required timestamp and profile columns exist
 ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
@@ -15,11 +55,17 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS return_period_days INTEGER 
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
--- 2. Turn off demo bestseller defaults on storefront_settings table
+-- 3. Turn off demo bestseller defaults on storefront_settings table
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerEnabled" SET DEFAULT false;
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerTitle" SET DEFAULT '';
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerSubtitle" SET DEFAULT '';
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerImage" SET DEFAULT '';
+
+-- 4. Grant table and schema permissions to anon, authenticated, and service_role
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
 
 -- 3. Drop all restrictive / conflicting policies across all tables
 DROP POLICY IF EXISTS "Public read categories" ON public.categories;
@@ -100,4 +146,19 @@ WHERE id::text IN ('cat-1', 'cat-2', 'cat-3')
 DELETE FROM public.offers
 WHERE id::text IN ('off-devora10', 'off-flat100', 'off-bogo', 'off-festive15', 'off-welcome10')
    OR "discountCode" IN ('DEVORA10', 'FLAT100', 'BUY2GET1', 'FESTIVE15', 'WELCOME10');
+
+-- 8. Ensure at least 1 storefront row exists with clean defaults
+INSERT INTO public.storefront_settings (
+    "heroBgGradientStart",
+    "heroBgGradientEnd",
+    "heroHeading",
+    "heroDescription",
+    "bestsellerEnabled"
+)
+SELECT '#064e3b', '#065f46', 'Natural Care For Your Skin, Hair & Soul', 'Elevate your daily self-care ritual with handcrafted Kumkumadi oils, wild-harvested Bhringraj scalp tonics, and sacred organic Sambrani dhoop.', false
+WHERE NOT EXISTS (SELECT 1 FROM public.storefront_settings);
+
+-- 9. Refresh PostgREST Schema Cache
+NOTIFY pgrst, 'reload schema';
+
 
