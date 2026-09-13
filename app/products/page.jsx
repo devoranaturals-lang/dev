@@ -153,8 +153,15 @@ function ProductsContent() {
           <p className="text-sm font-medium text-slate-500">Fetching products...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-100">
-          <p className="text-lg font-bold text-slate-700">No matching products found</p>
+        <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 max-w-lg mx-auto space-y-3">
+          <p className="text-xl font-bold text-slate-800">
+            {products.length === 0 ? "New Collection Coming Soon" : "No matching products found"}
+          </p>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            {products.length === 0
+              ? "Our pure organic botanical products are being crafted with fresh harvest. Please check back shortly!"
+              : "No products matched your search or category filter. Try clearing filters to see all items."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">

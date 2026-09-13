@@ -144,6 +144,30 @@ async function syncToSupabaseBackground(type, data) {
           }
         }
       }
+    } else if (type === "categories" && Array.isArray(data)) {
+      for (const cat of data) {
+        if (cat && !["cat-1", "cat-2", "cat-3"].includes(String(cat.id))) {
+          const { id, ...payload } = cat;
+          const isUUID = typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+          if (isUUID) {
+            await serverSupabase.from("categories").upsert({ ...payload, id }, { onConflict: "id" });
+          } else {
+            await serverSupabase.from("categories").insert([payload]);
+          }
+        }
+      }
+    } else if (type === "offers" && Array.isArray(data)) {
+      for (const off of data) {
+        if (off && !["off-devora10", "off-flat100", "off-bogo", "off-festive15", "off-welcome10"].includes(String(off.id))) {
+          const { id, ...payload } = off;
+          const isUUID = typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+          if (isUUID) {
+            await serverSupabase.from("offers").upsert({ ...payload, id }, { onConflict: "id" });
+          } else {
+            await serverSupabase.from("offers").insert([payload]);
+          }
+        }
+      }
     }
   } catch (err) {
     console.warn("Background syncToSupabase error:", err.message);
@@ -156,15 +180,23 @@ export async function GET() {
 
     if (serverSupabase) {
       try {
-        const { data: supaProducts, error: prodErr } = await serverSupabase
-          .from("products")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (!prodErr && Array.isArray(supaProducts) && supaProducts.length > 0) {
-          store.products = supaProducts.filter((p) => !isDemoProduct(p));
+        const [prodRes, catRes, offRes] = await Promise.all([
+          serverSupabase.from("products").select("*").order("created_at", { ascending: false }),
+          serverSupabase.from("categories").select("*").order("name", { ascending: true }),
+          serverSupabase.from("offers").select("*").order("created_at", { ascending: false }),
+        ]);
+
+        if (!prodRes.error && Array.isArray(prodRes.data)) {
+          store.products = prodRes.data.filter((p) => !isDemoProduct(p));
+        }
+        if (!catRes.error && Array.isArray(catRes.data)) {
+          store.categories = catRes.data.filter((c) => c && !["cat-1", "cat-2", "cat-3"].includes(String(c.id)));
+        }
+        if (!offRes.error && Array.isArray(offRes.data)) {
+          store.offers = offRes.data.filter((o) => o && !["off-devora10", "off-flat100", "off-bogo", "off-festive15", "off-welcome10"].includes(String(o.id)));
         }
       } catch (e) {
-        console.warn("serverSupabase get products error:", e.message);
+        console.warn("serverSupabase get data error:", e.message);
       }
     }
 

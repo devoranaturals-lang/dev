@@ -86,3 +86,18 @@ CREATE POLICY "Allow all customers" ON public.customers FOR ALL USING (true) WIT
 UPDATE public.storefront_settings
 SET "bestsellerEnabled" = false
 WHERE "bestsellerTitle" ILIKE '%Kumkumadi Saffron Glow Oil%' OR "bestsellerTitle" = 'Kumkumadi Saffron Glow Oil';
+
+-- 7. Clean all legacy demo records from Supabase tables for a completely fresh store
+DELETE FROM public.products
+WHERE id::text IN ('prod-1', 'prod-2', 'prod-3', 'prod-4', 'prod-5', 'prod-6')
+   OR id::text LIKE 'demo-%'
+   OR slug IN ('kumkumadi-radiant-face-oil', 'bhringraj-neem-hair-oil', 'pure-sambrani-dhoop-cups', 'organic-rose-water-mist', 'amla-hibiscus-shampoo', 'organic-bhimseni-camphor');
+
+DELETE FROM public.categories
+WHERE id::text IN ('cat-1', 'cat-2', 'cat-3')
+   OR slug IN ('skin-care', 'hair-care', 'pooja');
+
+DELETE FROM public.offers
+WHERE id::text IN ('off-devora10', 'off-flat100', 'off-bogo', 'off-festive15', 'off-welcome10')
+   OR "discountCode" IN ('DEVORA10', 'FLAT100', 'BUY2GET1', 'FESTIVE15', 'WELCOME10');
+

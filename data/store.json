@@ -1,123 +1,7 @@
 {
   "products": [],
-  "categories": [
-    {
-      "id": "cat-1",
-      "name": "Skin Care",
-      "slug": "skin-care",
-      "description": "Herbal face oils, glowing serums, and natural botanical creams"
-    },
-    {
-      "id": "cat-2",
-      "name": "Hair Care",
-      "slug": "hair-care",
-      "description": "Pure hair growth oils, Ayurvedic shampoos, and scalp nourishers"
-    },
-    {
-      "id": "cat-3",
-      "name": "Pooja Items",
-      "slug": "pooja",
-      "description": "Traditional organic dhoop, herbal camphor, and brass pooja essentials"
-    }
-  ],
-  "offers": [
-    {
-      "id": "off-devora10",
-      "title": "10% Herbal Discount",
-      "description": "Flat 10% OFF on your entire Ayurvedic & botanical order",
-      "discountCode": "DEVORA10",
-      "type": "coupon",
-      "discountType": "percentage",
-      "discountValue": 10,
-      "discountPercent": 10,
-      "minOrderAmount": 0,
-      "maxDiscountCap": 0,
-      "usageLimit": 500,
-      "usageCount": 14,
-      "category": "All",
-      "isActive": true,
-      "showBanner": true,
-      "showProductPage": true,
-      "hasTimer": false
-    },
-    {
-      "id": "off-flat100",
-      "title": "Flat ₹100 Mega Saver",
-      "description": "Save flat ₹100 on orders above ₹799",
-      "discountCode": "FLAT100",
-      "type": "coupon",
-      "discountType": "fixed",
-      "discountValue": 100,
-      "discountPercent": 0,
-      "minOrderAmount": 799,
-      "maxDiscountCap": 100,
-      "usageLimit": 200,
-      "usageCount": 8,
-      "category": "All",
-      "isActive": true,
-      "showBanner": false,
-      "showProductPage": true,
-      "hasTimer": false
-    },
-    {
-      "id": "off-bogo",
-      "title": "Buy 2 Get 1 FREE",
-      "description": "Buy any 2 natural care items and get the 3rd item FREE",
-      "discountCode": "BUY2GET1",
-      "type": "bogo",
-      "discountType": "bogo",
-      "discountValue": 0,
-      "discountPercent": 0,
-      "minOrderAmount": 0,
-      "maxDiscountCap": 0,
-      "usageLimit": 300,
-      "usageCount": 22,
-      "category": "All",
-      "isActive": true,
-      "showBanner": true,
-      "showProductPage": true,
-      "hasTimer": false
-    },
-    {
-      "id": "off-festive15",
-      "title": "Festive Celebration Savings",
-      "description": "Save 15% on pure natural wellness combos",
-      "discountCode": "FESTIVE15",
-      "type": "festival",
-      "discountType": "percentage",
-      "discountValue": 15,
-      "discountPercent": 15,
-      "minOrderAmount": 499,
-      "maxDiscountCap": 300,
-      "usageLimit": 150,
-      "usageCount": 45,
-      "category": "All",
-      "isActive": true,
-      "showBanner": true,
-      "showProductPage": true,
-      "hasTimer": false,
-      "timerEnd": ""
-    },
-    {
-      "id": "off-welcome10",
-      "title": "Welcome Gift Offer",
-      "description": "Get 10% off your entire first organic order",
-      "discountCode": "WELCOME10",
-      "type": "coupon",
-      "discountType": "percentage",
-      "discountValue": 10,
-      "discountPercent": 10,
-      "minOrderAmount": 299,
-      "maxDiscountCap": 0,
-      "usageLimit": 1000,
-      "usageCount": 31,
-      "category": "All",
-      "isActive": true,
-      "showBanner": false,
-      "showProductPage": true,
-      "hasTimer": false
-    }
-  ],
+  "categories": [],
+  "offers": [],
   "settings": {
     "store_name": "Devora Naturals",
     "tagline": "Pure Ayurvedic & Botanical Organic Care",
@@ -194,13 +78,6 @@
         "highlight_text": "Pure Ayurvedic",
         "link": "/about",
         "is_active": true
-      },
-      {
-        "id": "ann-3",
-        "text": "Special Festive Launch: 15% OFF with code DEVORA15 at checkout",
-        "highlight_text": "15% OFF",
-        "link": "#products-section",
-        "is_active": true
       }
     ],
     "hero_badge": "Pure Organic & Ayurvedic Wellness",
@@ -252,11 +129,11 @@
         "is_active": true
       }
     ],
-    "promoBannerEnabled": true,
-    "promoBannerTitle": "Handcrafted Botanical Elixirs for Ageless Beauty",
-    "promoBannerSubtitle": "Seasonal Harvest Edition",
-    "promoBannerImage": "https://images.unsplash.com/photo-1615397323282-311ab261291b?auto=format&fit=crop&w=1200&h=400&q=80",
-    "promoBannerBadge": "Limited Seasonal Deal",
+    "promoBannerEnabled": false,
+    "promoBannerTitle": "",
+    "promoBannerSubtitle": "",
+    "promoBannerImage": "",
+    "promoBannerBadge": "",
     "promoBannerLink": "#products-section",
     "promoBannerBtnText": "Shop Botanical Collection",
     "promos_list": [],
@@ -273,44 +150,10 @@
     "spotlight_stat_4_val": "4.9★",
     "spotlight_stat_4_lbl": "Customer Rating",
     "spotlight_image": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
-    "testimonials_enabled": true,
+    "testimonials_enabled": false,
     "testimonials_title": "Loved by Thousands of Natural Beauty Enthusiasts",
     "testimonials_subtitle": "Read authentic experiences from genuine buyers across India",
-    "testimonials": [
-      {
-        "id": "test-1",
-        "customer_name": "Priya Nair",
-        "location": "Kochi, Kerala",
-        "rating": 5,
-        "comment": "The botanical formulations have completely transformed my skin texture within 2 weeks. Zero breakouts and my natural glow is back!",
-        "product_name": "Ayurvedic Skin Care",
-        "image_url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80",
-        "is_verified": true,
-        "is_active": true
-      },
-      {
-        "id": "test-2",
-        "customer_name": "Aarav Sharma",
-        "location": "Bengaluru, Karnataka",
-        "rating": 5,
-        "comment": "Authentic herbal aroma and true cold-pressed richness. Scalp feels deeply nourished and hair vitality improved dramatically.",
-        "product_name": "Botanical Hair Care",
-        "image_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-        "is_verified": true,
-        "is_active": true
-      },
-      {
-        "id": "test-3",
-        "customer_name": "Sneha Patel",
-        "location": "Ahmedabad, Gujarat",
-        "rating": 5,
-        "comment": "Smells divine! Organic dhoop and camphor make my morning meditation and pooja deeply peaceful. Won't buy anything else.",
-        "product_name": "Sacred Pooja Collection",
-        "image_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
-        "is_verified": true,
-        "is_active": true
-      }
-    ],
+    "testimonials": [],
     "faqs_enabled": true,
     "faqs_title": "Frequently Asked Questions",
     "faqs_subtitle": "Clear answers about our organic sourcing, usage, and policies",
@@ -386,24 +229,6 @@
       "col1_show_dynamic_categories": true,
       "col1_links": [
         {
-          "id": "fcol1-1",
-          "label": "Skin Care Essentials",
-          "href": "/products?category=Skin Care",
-          "is_active": true
-        },
-        {
-          "id": "fcol1-2",
-          "label": "Ayurvedic Hair Oils",
-          "href": "/products?category=Hair Care",
-          "is_active": true
-        },
-        {
-          "id": "fcol1-3",
-          "label": "Sacred Pooja Dhoop & Resins",
-          "href": "/products?category=Pooja Items",
-          "is_active": true
-        },
-        {
           "id": "fcol1-4",
           "label": "View Full Catalog",
           "href": "/products",
@@ -443,5 +268,5 @@
   },
   "customers": [],
   "orders": [],
-  "updated_at": "2026-09-13T03:44:59.841Z"
+  "updated_at": "2026-09-13T04:25:00.000Z"
 }
