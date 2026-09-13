@@ -35,6 +35,12 @@ function isDemoProduct(product) {
   return false;
 }
 
+function isDemoCategory(category) {
+  if (!category) return false;
+  const idStr = String(category.id || "");
+  return ["cat-1", "cat-2", "cat-3"].includes(idStr);
+}
+
 // In-memory cache for fast fallback
 let memoryStore = null;
 
@@ -49,12 +55,14 @@ async function getPersistentStore() {
     if (Array.isArray(memoryStore.products)) {
       memoryStore.products = memoryStore.products.filter(p => !isDemoProduct(p));
     }
+    if (Array.isArray(memoryStore.categories)) {
+      memoryStore.categories = memoryStore.categories.filter(c => !isDemoCategory(c));
+    }
     return memoryStore;
   } catch (err) {
-    // If file does not exist, initialize with default initial data
     const initialStore = {
       products: DEFAULT_PRODUCTS.filter(p => !isDemoProduct(p)),
-      categories: DEFAULT_CATEGORIES,
+      categories: DEFAULT_CATEGORIES.filter(c => !isDemoCategory(c)),
       offers: DEFAULT_OFFERS,
       settings: DEFAULT_SETTINGS,
       storefront: DEFAULT_STOREFRONT_SETTINGS,
@@ -78,6 +86,9 @@ async function getPersistentStore() {
 async function savePersistentStore(updated) {
   if (Array.isArray(updated.products)) {
     updated.products = updated.products.filter(p => !isDemoProduct(p));
+  }
+  if (Array.isArray(updated.categories)) {
+    updated.categories = updated.categories.filter(c => !isDemoCategory(c));
   }
 
   memoryStore = {
@@ -140,19 +151,39 @@ async function syncToSupabaseBackground(type, data) {
           if (isUUID) {
             await serverSupabase.from("products").upsert({ ...payload, id }, { onConflict: "id" });
           } else {
-            await serverSupabase.from("products").insert([payload]);
+            // Check if product already exists by slug or name before inserting
+            const { data: existing } = await serverSupabase
+              .from("products")
+              .select("id")
+              .or(`slug.eq.${payload.slug},name.eq.${payload.name}`)
+              .maybeSingle();
+            if (existing?.id) {
+              await serverSupabase.from("products").update(payload).eq("id", existing.id);
+            } else {
+              await serverSupabase.from("products").insert([payload]);
+            }
           }
         }
       }
     } else if (type === "categories" && Array.isArray(data)) {
       for (const cat of data) {
-        if (cat && !["cat-1", "cat-2", "cat-3"].includes(String(cat.id))) {
+        if (!isDemoCategory(cat)) {
           const { id, ...payload } = cat;
           const isUUID = typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
           if (isUUID) {
             await serverSupabase.from("categories").upsert({ ...payload, id }, { onConflict: "id" });
           } else {
-            await serverSupabase.from("categories").insert([payload]);
+            // Check if category already exists by slug or name before inserting
+            const { data: existing } = await serverSupabase
+              .from("categories")
+              .select("id")
+              .or(`slug.eq.${payload.slug},name.eq.${payload.name}`)
+              .maybeSingle();
+            if (existing?.id) {
+              await serverSupabase.from("categories").update(payload).eq("id", existing.id);
+            } else {
+              await serverSupabase.from("categories").insert([payload]);
+            }
           }
         }
       }
@@ -164,7 +195,21 @@ async function syncToSupabaseBackground(type, data) {
           if (isUUID) {
             await serverSupabase.from("offers").upsert({ ...payload, id }, { onConflict: "id" });
           } else {
-            await serverSupabase.from("offers").insert([payload]);
+            const code = payload.discountCode || payload.code;
+            if (code) {
+              const { data: existing } = await serverSupabase
+                .from("offers")
+                .select("id")
+                .eq("discountCode", code)
+                .maybeSingle();
+              if (existing?.id) {
+                await serverSupabase.from("offers").update(payload).eq("id", existing.id);
+              } else {
+                await serverSupabase.from("offers").insert([payload]);
+              }
+            } else {
+              await serverSupabase.from("offers").insert([payload]);
+            }
           }
         }
       }
@@ -180,23 +225,38 @@ export async function GET() {
 
     if (serverSupabase) {
       try {
-        const [prodRes, catRes, offRes] = await Promise.all([
+        // Run queries with a 1.5s timeout so slow Supabase never stalls page loads
+        const fetchPromise = Promise.all([
           serverSupabase.from("products").select("*").order("created_at", { ascending: false }),
           serverSupabase.from("categories").select("*").order("name", { ascending: true }),
           serverSupabase.from("offers").select("*").order("created_at", { ascending: false }),
         ]);
 
-        if (!prodRes.error && Array.isArray(prodRes.data)) {
-          store.products = prodRes.data.filter((p) => !isDemoProduct(p));
-        }
-        if (!catRes.error && Array.isArray(catRes.data)) {
-          store.categories = catRes.data.filter((c) => c && !["cat-1", "cat-2", "cat-3"].includes(String(c.id)));
-        }
-        if (!offRes.error && Array.isArray(offRes.data)) {
-          store.offers = offRes.data.filter((o) => o && !["off-devora10", "off-flat100", "off-bogo", "off-festive15", "off-welcome10"].includes(String(o.id)));
+        const timeoutPromise = new Promise((resolve) =>
+          setTimeout(() => resolve("TIMEOUT"), 1500)
+        );
+
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+
+        if (result !== "TIMEOUT") {
+          const [prodRes, catRes, offRes] = result;
+
+          if (!prodRes.error && Array.isArray(prodRes.data)) {
+            store.products = prodRes.data.filter((p) => !isDemoProduct(p));
+          }
+          if (!catRes.error && Array.isArray(catRes.data)) {
+            store.categories = catRes.data.filter((c) => !isDemoCategory(c));
+          }
+          if (!offRes.error && Array.isArray(offRes.data)) {
+            store.offers = offRes.data.filter(
+              (o) =>
+                o &&
+                !["off-devora10", "off-flat100", "off-bogo", "off-festive15", "off-welcome10"].includes(String(o.id))
+            );
+          }
         }
       } catch (e) {
-        console.warn("serverSupabase get data error:", e.message);
+        console.warn("serverSupabase query skipped:", e.message);
       }
     }
 
@@ -214,13 +274,177 @@ export async function POST(request) {
     const body = await request.json();
     const current = await getPersistentStore();
 
+    // ================= SPECIFIC DIRECT ATOMIC ACTIONS =================
+    if (body.action === "add_product" && body.data) {
+      let newProd = { ...body.data };
+      const { id, ...supabasePayload } = newProd;
+
+      let savedProd = null;
+      if (serverSupabase) {
+        try {
+          const { data, error } = await serverSupabase
+            .from("products")
+            .insert([supabasePayload])
+            .select();
+          if (!error && data && data.length > 0) {
+            savedProd = data[0];
+          } else if (error) {
+            console.warn("serverSupabase add_product error, falling back:", error.message);
+          }
+        } catch (err) {
+          console.warn("serverSupabase add_product exception:", err);
+        }
+      }
+
+      const finalProd = savedProd || {
+        ...newProd,
+        id: id || `prod-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+
+      const existingProds = Array.isArray(current.products) ? current.products : [];
+      const updatedProds = [finalProd, ...existingProds.filter((p) => String(p.id) !== String(finalProd.id))];
+      await savePersistentStore({ products: updatedProds });
+
+      return NextResponse.json({ success: true, item: finalProd });
+    }
+
+    if (body.action === "update_product" && body.id && body.data) {
+      const updateId = String(body.id);
+      let updatedItem = null;
+
+      if (serverSupabase) {
+        try {
+          const { data, error } = await serverSupabase
+            .from("products")
+            .update(body.data)
+            .eq("id", updateId)
+            .select();
+          if (!error && data && data.length > 0) {
+            updatedItem = data[0];
+          }
+        } catch (_) {}
+      }
+
+      const existingProds = Array.isArray(current.products) ? current.products : [];
+      const index = existingProds.findIndex((p) => String(p.id) === updateId);
+      if (index !== -1) {
+        existingProds[index] = { ...existingProds[index], ...body.data, ...(updatedItem || {}) };
+      }
+      await savePersistentStore({ products: existingProds });
+
+      return NextResponse.json({ success: true, item: updatedItem || body.data });
+    }
+
+    if (body.action === "delete_product" && body.id) {
+      const deleteId = String(body.id);
+      if (serverSupabase) {
+        try {
+          await serverSupabase.from("products").delete().eq("id", deleteId);
+        } catch (_) {}
+      }
+
+      const existingProds = Array.isArray(current.products) ? current.products : [];
+      const filtered = existingProds.filter((p) => String(p.id) !== deleteId);
+      await savePersistentStore({ products: filtered });
+
+      return NextResponse.json({ success: true });
+    }
+
+    if (body.action === "add_category" && body.data) {
+      let newCat = { ...body.data };
+      const { id, ...supabasePayload } = newCat;
+
+      let savedCat = null;
+      if (serverSupabase) {
+        try {
+          // Check if category already exists by slug or name
+          const { data: existing } = await serverSupabase
+            .from("categories")
+            .select("*")
+            .or(`name.eq.${supabasePayload.name},slug.eq.${supabasePayload.slug}`)
+            .maybeSingle();
+
+          if (existing) {
+            savedCat = existing;
+          } else {
+            const { data, error } = await serverSupabase
+              .from("categories")
+              .insert([supabasePayload])
+              .select();
+            if (!error && data && data.length > 0) {
+              savedCat = data[0];
+            } else if (error) {
+              console.warn("serverSupabase add_category error:", error.message);
+            }
+          }
+        } catch (err) {
+          console.warn("serverSupabase add_category exception:", err);
+        }
+      }
+
+      const finalCat = savedCat || {
+        ...newCat,
+        id: id || `cat-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+
+      const existingCats = Array.isArray(current.categories) ? current.categories : [];
+      const updatedCats = [...existingCats.filter((c) => String(c.id) !== String(finalCat.id) && c.name !== finalCat.name), finalCat];
+      await savePersistentStore({ categories: updatedCats });
+
+      return NextResponse.json({ success: true, item: finalCat });
+    }
+
+    if (body.action === "update_category" && body.id && body.data) {
+      const catId = String(body.id);
+      let updatedCat = null;
+
+      if (serverSupabase) {
+        try {
+          const { data, error } = await serverSupabase
+            .from("categories")
+            .update(body.data)
+            .eq("id", catId)
+            .select();
+          if (!error && data && data.length > 0) {
+            updatedCat = data[0];
+          }
+        } catch (_) {}
+      }
+
+      const existingCats = Array.isArray(current.categories) ? current.categories : [];
+      const index = existingCats.findIndex((c) => String(c.id) === catId);
+      if (index !== -1) {
+        existingCats[index] = { ...existingCats[index], ...body.data, ...(updatedCat || {}) };
+      }
+      await savePersistentStore({ categories: existingCats });
+
+      return NextResponse.json({ success: true, item: updatedCat || body.data });
+    }
+
+    if (body.action === "delete_category" && body.id) {
+      const catId = String(body.id);
+      if (serverSupabase) {
+        try {
+          await serverSupabase.from("categories").delete().eq("id", catId);
+        } catch (_) {}
+      }
+
+      const existingCats = Array.isArray(current.categories) ? current.categories : [];
+      const filtered = existingCats.filter((c) => String(c.id) !== catId);
+      await savePersistentStore({ categories: filtered });
+
+      return NextResponse.json({ success: true });
+    }
+
+    // ================= GENERIC STORE SYNC =================
     let newStore = { ...current };
 
     if (body.type && body.data !== undefined) {
       newStore[body.type] = body.data;
       syncToSupabaseBackground(body.type, body.data);
     } else {
-      // Direct keys passed (e.g. { products: [...], storefront: {...} })
       const allowedKeys = ["products", "categories", "offers", "settings", "storefront", "customers", "orders"];
       for (const key of allowedKeys) {
         if (body[key] !== undefined) {

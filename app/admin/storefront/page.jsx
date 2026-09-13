@@ -151,13 +151,21 @@ const LinkSelector = ({ value, onChange, availableProducts, availableCategories 
 };
 
 export default function AdminStorefrontPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [activeTab, setActiveTab] = useState("identity"); // "identity" | "hero" | "announcements" | "value_props" | "promos" | "spotlight" | "testimonials" | "faqs"
 
-  const [form, setForm] = useState(DEFAULT_STOREFRONT_SETTINGS);
+  const [form, setForm] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const s = localStorage.getItem("devora_mock_storefront_v2");
+        if (s) return { ...DEFAULT_STOREFRONT_SETTINGS, ...JSON.parse(s) };
+      } catch (_) {}
+    }
+    return DEFAULT_STOREFRONT_SETTINGS;
+  });
 
   // Hero Card Add/Edit Modal
   const [heroCardModalOpen, setHeroCardModalOpen] = useState(false);
@@ -251,9 +259,9 @@ export default function AdminStorefrontPage() {
   const [availableCategories, setAvailableCategories] = useState([]);
 
   useEffect(() => {
-    async function loadSettings() {
+    async function loadSettings(showLoading = false) {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         const [data, contact, prods, cats] = await Promise.all([
           getStorefrontSettings(),
           getContactDetails(),
@@ -282,10 +290,10 @@ export default function AdminStorefrontPage() {
       } catch (err) {
         console.error("Failed to load storefront settings", err);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     }
-    loadSettings();
+    loadSettings(false);
   }, []);
 
   const handleChange = (e) => {

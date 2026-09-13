@@ -38,7 +38,14 @@ export default function AdminOverviewPage() {
   const [allOrders, setAllOrders] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      const prods = localStorage.getItem("devora_mock_products_v1");
+      const orders = localStorage.getItem("devora_mock_orders_v1");
+      if (prods || orders) return false;
+    }
+    return false;
+  });
 
   // Daily revenue state
   const [showDailyRevenueModal, setShowDailyRevenueModal] = useState(false);
@@ -46,9 +53,9 @@ export default function AdminOverviewPage() {
   const [expandedDayKey, setExpandedDayKey] = useState(null);
 
   useEffect(() => {
-    async function loadMetrics() {
+    async function loadMetrics(showLoading = false) {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         const [products, categories, orders] = await Promise.all([
           getProducts(),
           getCategories(),

@@ -10,22 +10,43 @@ function ProductsContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "All";
 
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_products_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_categories_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
+    async function loadData(showLoading = false) {
+      if (showLoading) setLoading(true);
       const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
-      setProducts(prods || []);
-      setCategories(cats || []);
-      setLoading(false);
+      if (prods) setProducts(prods);
+      if (cats) setCategories(cats);
+      if (showLoading) setLoading(false);
     }
-    loadData();
+
+    if (products.length === 0 && categories.length === 0) {
+      loadData(true);
+    } else {
+      loadData(false);
+    }
 
     const handleLiveUpdate = () => {
       loadData();

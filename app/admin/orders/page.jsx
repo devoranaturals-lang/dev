@@ -13,9 +13,17 @@ try {
 
 export default function AdminOrdersPage() {
   const { user, isAdmin } = useAuth();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_orders_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [filterDate, setFilterDate] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [editOrder, setEditOrder] = useState(null);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -36,22 +44,31 @@ export default function AdminOrdersPage() {
     pincode: "",
   });
 
-  const loadOrders = async () => {
-    setLoading(true);
-    const [data, contact] = await Promise.all([getOrders(), getContactDetails()]);
-    setOrders(data || []);
-    if (contact) {
-      setStoreContact({
-        phone: contact.whatsapp || contact.phone || "8608540400",
-        email: contact.email || "support@devoranaturals.com",
-        address: contact.address || "Kerala Botanical Organic Farm, India",
-      });
+  const loadOrders = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const [data, contact] = await Promise.all([getOrders(), getContactDetails()]);
+      if (data) setOrders(data);
+      if (contact) {
+        setStoreContact({
+          phone: contact.whatsapp || contact.phone || "8608540400",
+          email: contact.email || "support@devoranaturals.com",
+          address: contact.address || "Kerala Botanical Organic Farm, India",
+        });
+      }
+    } catch (e) {
+      console.warn("loadOrders error:", e);
+    } finally {
+      if (showLoading) setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadOrders();
+    if (orders.length === 0) {
+      loadOrders(true);
+    } else {
+      loadOrders(false);
+    }
   }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {

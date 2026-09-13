@@ -5,15 +5,23 @@ import { getProducts, updateProduct } from "../../../lib/supabase";
 import { Boxes, Search, Check, RefreshCw } from "lucide-react";
 
 export default function AdminInventoryPage() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_products_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
   const [stockInputs, setStockInputs] = useState({});
   const [successMsg, setSuccessMsg] = useState("");
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     const prods = await getProducts();
     setProducts(prods || []);
     
@@ -24,11 +32,15 @@ export default function AdminInventoryPage() {
     });
     setStockInputs(initialStocks);
     
-    setLoading(false);
+    if (showLoading) setLoading(false);
   };
 
   useEffect(() => {
-    loadData();
+    if (products.length === 0) {
+      loadData(true);
+    } else {
+      loadData(false);
+    }
   }, []);
 
   const handleStockChange = (id, value) => {

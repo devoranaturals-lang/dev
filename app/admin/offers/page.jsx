@@ -28,9 +28,25 @@ import {
 } from "lucide-react";
 
 export default function AdminCouponsAndOffersPage() {
-  const [offers, setOffers] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [offers, setOffers] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_offers_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_categories_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,15 +83,19 @@ export default function AdminCouponsAndOffersPage() {
   const [formData, setFormData] = useState(initialFormState);
 
   useEffect(() => {
-    fetchInitialData();
+    if (offers.length === 0) {
+      fetchInitialData(true);
+    } else {
+      fetchInitialData(false);
+    }
 
     const handleOffersUpdated = () => {
-      fetchInitialData();
+      fetchInitialData(false);
     };
 
     const handleStorageChange = (e) => {
       if (e.key === "devora_offers_sync_ping" || e.key === "devora_deleted_offers" || e.key === "devora_mock_offers_v1") {
-        fetchInitialData();
+        fetchInitialData(false);
       }
     };
 
@@ -87,16 +107,16 @@ export default function AdminCouponsAndOffersPage() {
     };
   }, []);
 
-  async function fetchInitialData() {
+  async function fetchInitialData(showLoading = false) {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [offersData, catsData] = await Promise.all([getOffers(), getCategories()]);
-      setOffers(offersData || []);
-      setCategories(catsData || []);
+      if (offersData) setOffers(offersData);
+      if (catsData) setCategories(catsData);
     } catch (error) {
       console.error("Error fetching coupons & offers:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 

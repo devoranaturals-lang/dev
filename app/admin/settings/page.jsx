@@ -126,7 +126,7 @@ export default function AdminSettingsPage() {
     about_cards: DEFAULT_ABOUT_DATA.cards,
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -159,9 +159,9 @@ export default function AdminSettingsPage() {
   const [linkToDeleteIndex, setLinkToDeleteIndex] = useState(null);
 
   useEffect(() => {
-    async function loadSettings() {
+    async function loadSettings(showLoading = false) {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         const data = await getContactDetails();
         if (data) {
           setFormData((prev) => ({
@@ -204,10 +204,10 @@ export default function AdminSettingsPage() {
       } catch (error) {
         console.error("Failed to load settings:", error);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     }
-    loadSettings();
+    loadSettings(false);
   }, []);
 
   const handleChange = (e) => {

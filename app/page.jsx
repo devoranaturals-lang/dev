@@ -41,37 +41,69 @@ const ICON_MAP = {
 };
 
 export default function HomePage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const s = localStorage.getItem("devora_mock_products_v1");
+        if (s) return JSON.parse(s);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const s = localStorage.getItem("devora_mock_categories_v1");
+        if (s) return JSON.parse(s);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [storefront, setStorefront] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [storefront, setStorefront] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const s = localStorage.getItem("devora_mock_storefront_v2");
+        if (s) return JSON.parse(s);
+      } catch (_) {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(false);
   const [openFaqId, setOpenFaqId] = useState(null);
   const [heroCardIdx, setHeroCardIdx] = useState(0);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchData(showLoading = false) {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         const [prods, cats, sf] = await Promise.all([
           getProducts(),
           getCategories(),
           getStorefrontSettings(),
         ]);
-        setProducts(prods || []);
-        setCategories(cats || []);
-        setStorefront(sf || null);
-        if (sf?.faqs && sf.faqs.length > 0) {
-          setOpenFaqId(sf.faqs[0].id);
+        if (prods) setProducts(prods);
+        if (cats) setCategories(cats);
+        if (sf) {
+          setStorefront(sf);
+          if (sf.faqs && sf.faqs.length > 0) {
+            setOpenFaqId(sf.faqs[0].id);
+          }
         }
       } catch (err) {
         console.error("Failed to load storefront data:", err);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     }
-    fetchData();
+    
+    // If no initial cache, show quick loader
+    if (products.length === 0 && !storefront) {
+      fetchData(true);
+    } else {
+      fetchData(false);
+    }
 
     // Listen for live storefront, products, and categories updates from admin
     const handleStorefrontUpdate = (e) => {

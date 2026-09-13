@@ -1,16 +1,75 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProducts, addProduct, updateProduct, deleteProduct, getCategories, clearAllProducts } from "../../../lib/supabase";
-import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw, ShieldCheck } from "lucide-react";
+import { getProducts, addProduct, updateProduct, deleteProduct, getCategories, addCategory, clearAllProducts } from "../../../lib/supabase";
+import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw, ShieldCheck, RotateCcw } from "lucide-react";
+
+// Client-side image compression utility to prevent local storage quota crashes and payload errors
+function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+}
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  // Initialize immediately from local cache so navigation is 0ms instant
+  const [products, setProducts] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_products_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_categories_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -27,22 +86,35 @@ export default function AdminProductsPage() {
     return_period_days: 7,
   });
 
-  const loadData = async () => {
-    setLoading(true);
-    const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
-    setProducts(prods || []);
-    setCategories(cats || []);
-    setLoading(false);
+  const loadData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    setIsRefreshing(true);
+    try {
+      const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
+      if (prods) setProducts(prods);
+      if (cats) setCategories(cats);
+    } catch (e) {
+      console.warn("loadData error in admin products:", e);
+    } finally {
+      if (showLoading) setLoading(false);
+      setIsRefreshing(false);
+    }
   };
 
   useEffect(() => {
-    loadData();
+    // If no initial cached products, show quick loader while fetching
+    if (products.length === 0 && categories.length === 0) {
+      loadData(true);
+    } else {
+      loadData(false);
+    }
+
     const handleProductsUpdated = () => {
-      loadData();
+      loadData(false);
     };
     const handleStorage = (e) => {
       if (e.key === "devora_mock_products_v1" || e.key === "devora_products_sync_ping") {
-        loadData();
+        loadData(false);
       }
     };
     window.addEventListener("devora_products_updated", handleProductsUpdated);
@@ -55,11 +127,14 @@ export default function AdminProductsPage() {
 
   const openAddModal = () => {
     setEditItem(null);
+    setIsCustomCategory(false);
+    setCustomCategoryName("");
+    const defaultCat = categories[0]?.name || "Skin Care";
     setForm({
       name: "",
       price: "",
       actual_price: "",
-      category: categories[0]?.name || "Skin Care",
+      category: defaultCat,
       description: "",
       image_url: "",
       stock: "50",
@@ -74,11 +149,13 @@ export default function AdminProductsPage() {
 
   const openEditModal = (product) => {
     setEditItem(product);
+    setIsCustomCategory(false);
+    setCustomCategoryName("");
     setForm({
       name: product.name,
       price: product.price,
       actual_price: product.actual_price || "",
-      category: product.category,
+      category: product.category || categories[0]?.name || "Skin Care",
       description: product.description || "",
       image_url: product.image_url || "",
       stock: product.stock || 50,
@@ -93,18 +170,30 @@ export default function AdminProductsPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price || !form.category) {
+    const resolvedCategory = isCustomCategory && customCategoryName.trim()
+      ? customCategoryName.trim()
+      : (form.category || "Skin Care");
+
+    if (!form.name || !form.price || !resolvedCategory) {
       alert("Product Name, Price, and Category are required.");
       return;
     }
 
     try {
+      // If user typed a custom category, create it in categories table automatically
+      if (isCustomCategory && customCategoryName.trim()) {
+        const catName = customCategoryName.trim();
+        if (!categories.some((c) => c.name.toLowerCase() === catName.toLowerCase())) {
+          addCategory({ name: catName }).catch(() => {});
+        }
+      }
+
       const payload = {
-        name: form.name,
-        slug: form.name.toLowerCase().replace(/\s+/g, "-"),
+        name: form.name.trim(),
+        slug: form.name.trim().toLowerCase().replace(/\s+/g, "-"),
         price: Number(form.price),
         actual_price: Number(form.actual_price) || Number(form.price),
-        category: form.category,
+        category: resolvedCategory,
         description: form.description,
         image_url: form.image_url || "https://images.unsplash.com/photo-1608248597263-00079e96047c?auto=format&fit=crop&w=600&q=80",
         stock: Number(form.stock || 50),
@@ -115,18 +204,23 @@ export default function AdminProductsPage() {
         return_period_days: form.is_returnable ? Number(form.return_period_days || 7) : 0,
       };
 
+      // Optimistic close and update
+      setModalOpen(false);
+
       let savedProd = null;
       if (editItem) {
+        setProducts((prev) => prev.map((p) => String(p.id) === String(editItem.id) ? { ...p, ...payload } : p));
         savedProd = await updateProduct(editItem.id, payload);
       } else {
+        const tempProd = { ...payload, id: `prod-${Date.now()}` };
+        setProducts((prev) => [tempProd, ...prev]);
         savedProd = await addProduct(payload);
       }
 
-      setModalOpen(false);
       if (savedProd) {
         setProducts((prev) => [savedProd, ...prev.filter((p) => String(p.id) !== String(savedProd.id))]);
       }
-      await loadData();
+      loadData(false);
     } catch (err) {
       console.error(err);
       alert("Failed to save product: " + err.message);
@@ -135,15 +229,17 @@ export default function AdminProductsPage() {
 
   const handleDelete = async (id, name) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
       await deleteProduct(id);
-      await loadData();
+      loadData(false);
     }
   };
 
   const handleClearAll = async () => {
     if (confirm("Are you sure you want to clear all products from the store? The catalog will be empty on the customer site.")) {
+      setProducts([]);
       await clearAllProducts();
-      await loadData();
+      loadData(false);
     }
   };
 
@@ -400,23 +496,65 @@ export default function AdminProductsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Category *</label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
-                  >
-                    {categories.length === 0 ? (
-                      <option value="Skin Care">Skin Care</option>
-                    ) : (
-                      categories.map((c) => (
-                        <option key={c.id || c.name} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                <div className="col-span-2 sm:col-span-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">Category *</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCategory(!isCustomCategory);
+                        if (!isCustomCategory) setCustomCategoryName("");
+                      }}
+                      className="text-[10px] font-bold text-brand-700 hover:underline cursor-pointer"
+                    >
+                      {isCustomCategory ? "Choose from list" : "+ Type new"}
+                    </button>
+                  </div>
+                  {isCustomCategory ? (
+                    <input
+                      type="text"
+                      required
+                      value={customCategoryName}
+                      onChange={(e) => {
+                        setCustomCategoryName(e.target.value);
+                        setForm({ ...form, category: e.target.value });
+                      }}
+                      placeholder="e.g. Skin Care, Hair Care..."
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
+                    />
+                  ) : (
+                    <select
+                      value={form.category}
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW__") {
+                          setIsCustomCategory(true);
+                          setCustomCategoryName("");
+                          setForm({ ...form, category: "" });
+                        } else {
+                          setForm({ ...form, category: e.target.value });
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-700 font-semibold"
+                    >
+                      {categories.length === 0 ? (
+                        <>
+                          <option value="Skin Care">Skin Care</option>
+                          <option value="Hair Care">Hair Care</option>
+                          <option value="Pooja Items">Pooja Items</option>
+                          <option value="__NEW__">+ Type Custom Category...</option>
+                        </>
+                      ) : (
+                        <>
+                          {categories.map((c) => (
+                            <option key={c.id || c.name} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                          <option value="__NEW__">+ Type Custom Category...</option>
+                        </>
+                      )}
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -434,15 +572,21 @@ export default function AdminProductsPage() {
                   )}
                   <input
                     type="file"
-                    accept="image/jpeg, image/jpg, image/png"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
+                    accept="image/jpeg, image/jpg, image/png, image/webp"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setForm({ ...form, image_url: reader.result });
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          const compressed = await compressImage(file);
+                          setForm((prev) => ({ ...prev, image_url: compressed }));
+                        } catch (err) {
+                          console.warn("Image compression failed, using fallback:", err);
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setForm((prev) => ({ ...prev, image_url: reader.result }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
                       }
                     }}
                     className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-100 file:text-brand-700 hover:file:bg-brand-200 cursor-pointer"

@@ -39,11 +39,27 @@ import {
 } from "lucide-react";
 
 export default function AdminCustomersPage() {
-  const [customers, setCustomers] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [customers, setCustomers] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_customers_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [orders, setOrders] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_orders_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Modals state
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -72,20 +88,25 @@ export default function AdminCustomersPage() {
 
   const [form, setForm] = useState(initialForm);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const [custData, ordersData] = await Promise.all([getCustomers(), getOrders()]);
-      setCustomers(custData || []);
-      setOrders(ordersData || []);
+      if (custData) setCustomers(custData);
+      if (ordersData) setOrders(ordersData);
     } catch (err) {
       console.error("Failed to load customers or orders:", err);
+    } finally {
+      if (showLoading) setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadData();
+    if (customers.length === 0) {
+      loadData(true);
+    } else {
+      loadData(false);
+    }
     const handleStorageChange = (e) => {
       if (e.key === "devora_mock_customers_v1" || e.key === "devora_mock_orders_v1") {
         loadData();

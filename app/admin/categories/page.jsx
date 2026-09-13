@@ -5,9 +5,26 @@ import { getCategories, addCategory, updateCategory, deleteCategory, getProducts
 import { FolderTree, Plus, Trash2, Edit2, X, RefreshCw, Layers, Check } from "lucide-react";
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Initialize immediately from local cache so navigation is instant with 0ms lag
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_categories_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [products, setProducts] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_products_v1");
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -19,16 +36,38 @@ export default function AdminCategoriesPage() {
     description: "",
   });
 
-  const loadData = async () => {
-    setLoading(true);
-    const [cats, prods] = await Promise.all([getCategories(), getProducts()]);
-    setCategories(cats || []);
-    setProducts(prods || []);
-    setLoading(false);
+  const loadData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const [cats, prods] = await Promise.all([getCategories(), getProducts()]);
+      if (cats) setCategories(cats);
+      if (prods) setProducts(prods);
+    } catch (e) {
+      console.warn("Categories loadData error:", e);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadData();
+    if (categories.length === 0) {
+      loadData(true);
+    } else {
+      loadData(false);
+    }
+
+    const handleCategoriesUpdated = (e) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setCategories(e.detail);
+      } else {
+        loadData(false);
+      }
+    };
+
+    window.addEventListener("devora_categories_updated", handleCategoriesUpdated);
+    return () => {
+      window.removeEventListener("devora_categories_updated", handleCategoriesUpdated);
+    };
   }, []);
 
   const openAddModal = () => {
@@ -63,18 +102,28 @@ export default function AdminCategoriesPage() {
         description: form.description.trim(),
       };
 
+      // Close modal instantly for seamless UI experience
+      setModalOpen(false);
+
+      let savedCat = null;
       if (editItem) {
-        await updateCategory(editItem.id, payload);
+        setCategories((prev) => prev.map((c) => String(c.id) === String(editItem.id) ? { ...c, ...payload } : c));
+        savedCat = await updateCategory(editItem.id, payload);
         setSuccessMsg(`Category "${payload.name}" updated successfully!`);
       } else {
-        await addCategory(payload);
+        const tempCat = { ...payload, id: `cat-${Date.now()}` };
+        setCategories((prev) => [...prev.filter((c) => c.name !== payload.name), tempCat]);
+        savedCat = await addCategory(payload);
         setSuccessMsg(`Category "${payload.name}" created successfully!`);
       }
 
+      if (savedCat) {
+        setCategories((prev) => [...prev.filter((c) => String(c.id) !== String(savedCat.id) && c.name !== savedCat.name), savedCat]);
+      }
+
       setForm({ name: "", slug: "", description: "" });
-      setModalOpen(false);
       setTimeout(() => setSuccessMsg(""), 3000);
-      await loadData();
+      loadData(false);
     } catch (err) {
       console.error(err);
       alert("Failed to save category: " + err.message);
@@ -86,10 +135,11 @@ export default function AdminCategoriesPage() {
   const handleDeleteCategory = async (id, name) => {
     if (confirm(`Are you sure you want to delete category "${name}"?`)) {
       try {
+        setCategories((prev) => prev.filter((c) => String(c.id) !== String(id)));
         await deleteCategory(id);
         setSuccessMsg(`Category "${name}" deleted.`);
         setTimeout(() => setSuccessMsg(""), 3000);
-        await loadData();
+        loadData(false);
       } catch (err) {
         console.error(err);
         alert("Failed to delete category.");
