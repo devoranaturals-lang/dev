@@ -129,11 +129,12 @@ export default function HomePage() {
   // Hero Spotlight Cards handling (Multi-card showcase)
   const isDemoCard = (card) => {
     if (!card) return false;
-    const title = (card.title || "").toLowerCase();
-    const link = (card.link || "").toLowerCase();
+    const link = String(card.link || "").toLowerCase();
+    const id = String(card.id || "").toLowerCase();
     return (
-      title.includes("kumkumadi") ||
-      title.includes("bhringraj") ||
+      id === "card-demo-1" ||
+      id === "card-demo-2" ||
+      id === "card-demo-3" ||
       link.includes("prod-1") ||
       link.includes("prod-2") ||
       link.includes("prod-3")
