@@ -127,9 +127,23 @@ export default function HomePage() {
 
 
   // Hero Spotlight Cards handling (Multi-card showcase)
-  const activeHeroCards = (storefront?.hero_cards || []).filter((c) => c.is_active !== false);
-  const displayHeroCards =
-    activeHeroCards.length > 0 ? activeHeroCards : DEFAULT_STOREFRONT_SETTINGS.hero_cards;
+  const isDemoCard = (card) => {
+    if (!card) return false;
+    const title = (card.title || "").toLowerCase();
+    const link = (card.link || "").toLowerCase();
+    return (
+      title.includes("kumkumadi") ||
+      title.includes("bhringraj") ||
+      link.includes("prod-1") ||
+      link.includes("prod-2") ||
+      link.includes("prod-3")
+    );
+  };
+
+  const activeHeroCards = (storefront?.hero_cards || []).filter(
+    (c) => c.is_active !== false && !isDemoCard(c)
+  );
+  const displayHeroCards = activeHeroCards;
 
   useEffect(() => {
     if (displayHeroCards.length <= 1) return;
@@ -159,11 +173,21 @@ export default function HomePage() {
       : DEFAULT_STOREFRONT_SETTINGS.value_props
   ).filter((vp) => vp.is_active !== false);
 
+  const isDemoPromo = (p) => {
+    if (!p) return false;
+    const title = (p.title || "").toLowerCase();
+    return (
+      title.includes("ayurvedic hair vitalizer") ||
+      title.includes("sambrani dhoop") ||
+      title.includes("pooja & sambrani")
+    );
+  };
+
   const activePromos = (
     Array.isArray(storefront?.promos_list)
       ? storefront.promos_list
-      : DEFAULT_STOREFRONT_SETTINGS.promos_list
-  ).filter((p) => p.is_active !== false);
+      : (DEFAULT_STOREFRONT_SETTINGS.promos_list || [])
+  ).filter((p) => p.is_active !== false && !isDemoPromo(p));
 
   const activeTestimonials = (
     Array.isArray(storefront?.testimonials)
