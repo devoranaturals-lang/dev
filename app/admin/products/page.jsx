@@ -37,6 +37,20 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     loadData();
+    const handleProductsUpdated = () => {
+      loadData();
+    };
+    const handleStorage = (e) => {
+      if (e.key === "devora_mock_products_v1" || e.key === "devora_products_sync_ping") {
+        loadData();
+      }
+    };
+    window.addEventListener("devora_products_updated", handleProductsUpdated);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("devora_products_updated", handleProductsUpdated);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const openAddModal = () => {
@@ -101,13 +115,17 @@ export default function AdminProductsPage() {
         return_period_days: form.is_returnable ? Number(form.return_period_days || 7) : 0,
       };
 
+      let savedProd = null;
       if (editItem) {
-        await updateProduct(editItem.id, payload);
+        savedProd = await updateProduct(editItem.id, payload);
       } else {
-        await addProduct(payload);
+        savedProd = await addProduct(payload);
       }
 
       setModalOpen(false);
+      if (savedProd) {
+        setProducts((prev) => [savedProd, ...prev.filter((p) => String(p.id) !== String(savedProd.id))]);
+      }
       await loadData();
     } catch (err) {
       console.error(err);
@@ -136,10 +154,12 @@ export default function AdminProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((p) => {
+    if (!p) return false;
+    const nameMatch = (p.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const catMatch = (p.category || "").toLowerCase().includes(searchQuery.toLowerCase());
+    return nameMatch || catMatch;
+  });
 
   return (
     <div className="space-y-6">

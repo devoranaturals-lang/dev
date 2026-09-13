@@ -9,6 +9,11 @@ ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH 
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS extended_data JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS actual_price NUMERIC(10, 2);
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_returnable BOOLEAN DEFAULT true;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS return_period_days INTEGER DEFAULT 7;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
 -- 2. Turn off demo bestseller defaults on storefront_settings table
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerEnabled" SET DEFAULT false;

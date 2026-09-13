@@ -62,15 +62,16 @@ function ProductsContent() {
     if (cat) setSelectedCategory(cat);
   }, [searchParams]);
 
-  const activeProducts = products.filter(p => p.is_active !== false);
+  const activeProducts = products.filter(p => p && p.is_active !== false);
 
   let filtered = activeProducts.filter((product) => {
+    if (!product) return false;
     const matchesCategory =
       selectedCategory === "All" ||
-      product.category?.toLowerCase() === selectedCategory.toLowerCase();
+      (product.category || "").toLowerCase() === selectedCategory.toLowerCase();
     const matchesSearch =
-      product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      (product.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 

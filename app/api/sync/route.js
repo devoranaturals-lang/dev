@@ -26,32 +26,10 @@ const serverSupabase =
       })
     : null;
 
-const DEMO_PRODUCT_IDS = new Set([
-  "prod-1", "prod-2", "prod-3", "prod-4", "prod-5", "prod-6",
-  "demo-1", "demo-2", "demo-3", "demo-4", "demo-5", "demo-6"
-]);
-
-const DEMO_PRODUCT_SLUGS = new Set([
-  "kumkumadi-radiant-face-oil",
-  "bhringraj-neem-hair-oil",
-  "pure-sambrani-dhoop-cups",
-  "organic-rose-water-mist",
-  "amla-hibiscus-shampoo",
-  "bhimseni-camphor-tablets"
-]);
-
 function isDemoProduct(product) {
   if (!product) return false;
-  if (DEMO_PRODUCT_IDS.has(String(product.id))) return true;
-  if (product.slug && DEMO_PRODUCT_SLUGS.has(String(product.slug).toLowerCase())) return true;
-  if (product.name && [
-    "Kumkumadi Herbal Radiant Face Oil",
-    "Bhringraj & Neem Intensive Hair Growth Oil",
-    "Pure Sambrani Dhoop Cups (Pack of 12)",
-    "Pure Organic Rose Water Hydrating Mist",
-    "Amla & Hibiscus Natural Herbal Shampoo",
-    "Organic Bhimseni Camphor Pure Tablets"
-  ].includes(product.name)) {
+  const idStr = String(product.id || "");
+  if (idStr.startsWith("demo-") || idStr.startsWith("card-demo-")) {
     return true;
   }
   return false;
@@ -154,6 +132,18 @@ async function syncToSupabaseBackground(type, data) {
       } else {
         await serverSupabase.from("storefront_settings").insert([payload]);
       }
+    } else if (type === "products" && Array.isArray(data)) {
+      for (const prod of data) {
+        if (!isDemoProduct(prod)) {
+          const { id, ...payload } = prod;
+          const isUUID = typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+          if (isUUID) {
+            await serverSupabase.from("products").upsert({ ...payload, id }, { onConflict: "id" });
+          } else {
+            await serverSupabase.from("products").insert([payload]);
+          }
+        }
+      }
     }
   } catch (err) {
     console.warn("Background syncToSupabase error:", err.message);
@@ -163,6 +153,21 @@ async function syncToSupabaseBackground(type, data) {
 export async function GET() {
   try {
     const store = await getPersistentStore();
+
+    if (serverSupabase) {
+      try {
+        const { data: supaProducts, error: prodErr } = await serverSupabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (!prodErr && Array.isArray(supaProducts) && supaProducts.length > 0) {
+          store.products = supaProducts.filter((p) => !isDemoProduct(p));
+        }
+      } catch (e) {
+        console.warn("serverSupabase get products error:", e.message);
+      }
+    }
+
     return NextResponse.json({ success: true, store });
   } catch (err) {
     return NextResponse.json(
