@@ -28,9 +28,27 @@ const serverSupabase =
 
 function isDemoProduct(product) {
   if (!product) return false;
-  const idStr = String(product.id || "");
-  if (idStr.startsWith("demo-") || idStr.startsWith("card-demo-")) {
-    return true;
+  const idStr = String(product.id || "").toLowerCase().trim();
+  const slugStr = String(product.slug || "").toLowerCase().trim();
+  const nameStr = String(product.name || "").toLowerCase().trim();
+
+  const demoIds = ["prod-1", "prod-2", "prod-3", "prod-4", "prod-5", "prod-6", "demo-1", "demo-2", "demo-3", "demo-4", "demo-5", "demo-6"];
+  if (demoIds.includes(idStr)) return true;
+  if (/^prod-[1-6]$/i.test(idStr)) return true;
+  if (/^demo-\d+$/i.test(idStr) || idStr.startsWith("demo-") || idStr.startsWith("card-demo-")) return true;
+
+  const demoSlugs = [
+    "kumkumadi-radiant-face-oil", "kumkumadi-radiant-glow-face-oil", "kumkumadi-saffron-glow-oil",
+    "bhringraj-neem-hair-oil", "bhringraj-neem-treatment-oil", "bhringraj-neem-intensive-hair-growth-oil",
+    "pure-sambrani-dhoop-cups", "organic-rose-water-mist", "pure-organic-rose-water-hydrating-mist",
+    "amla-hibiscus-shampoo", "amla-hibiscus-natural-herbal-shampoo",
+    "bhimseni-camphor-tablets", "organic-bhimseni-camphor"
+  ];
+  if (demoSlugs.includes(slugStr)) return true;
+
+  const keywords = ["kumkumadi", "bhringraj", "sambrani", "rose-water", "amla-hibiscus", "bhimseni-camphor", "organic rose water", "amla & hibiscus", "amla and hibiscus"];
+  for (const kw of keywords) {
+    if (slugStr.includes(kw) || nameStr.includes(kw)) return true;
   }
   return false;
 }
@@ -335,6 +353,11 @@ export async function GET() {
           const [prodRes, catRes, offRes, sfRes, setRes] = result;
 
           if (!prodRes.error && Array.isArray(prodRes.data)) {
+            const demoProds = prodRes.data.filter((p) => isDemoProduct(p));
+            if (demoProds.length > 0) {
+              const demoIds = demoProds.map((p) => p.id);
+              serverSupabase.from("products").delete().in("id", demoIds).then(() => {}).catch(() => {});
+            }
             store.products = prodRes.data.filter((p) => !isDemoProduct(p));
           }
           if (!catRes.error && Array.isArray(catRes.data)) {

@@ -163,13 +163,30 @@ export default function HomePage() {
     if (!card) return false;
     const link = String(card.link || "").toLowerCase();
     const id = String(card.id || "").toLowerCase();
+    const title = String(card.title || "").toLowerCase();
     return (
       id === "card-demo-1" ||
       id === "card-demo-2" ||
       id === "card-demo-3" ||
+      id.startsWith("card-demo-") ||
       link.includes("prod-1") ||
       link.includes("prod-2") ||
-      link.includes("prod-3")
+      link.includes("prod-3") ||
+      link.includes("prod-4") ||
+      link.includes("prod-5") ||
+      link.includes("prod-6") ||
+      link.includes("kumkumadi") ||
+      link.includes("bhringraj") ||
+      link.includes("sambrani") ||
+      link.includes("bhimseni") ||
+      link.includes("rose-water") ||
+      title.includes("kumkumadi") ||
+      title.includes("bhringraj") ||
+      title.includes("sambrani") ||
+      title.includes("rose water") ||
+      title.includes("bhimseni camphor") ||
+      title.includes("amla & hibiscus") ||
+      title.includes("amla and hibiscus")
     );
   };
 
@@ -210,10 +227,17 @@ export default function HomePage() {
   const isDemoPromo = (p) => {
     if (!p) return false;
     const title = (p.title || "").toLowerCase();
+    const link = String(p.link || "").toLowerCase();
     return (
       title.includes("ayurvedic hair vitalizer") ||
       title.includes("sambrani dhoop") ||
-      title.includes("pooja & sambrani")
+      title.includes("pooja & sambrani") ||
+      title.includes("kumkumadi") ||
+      title.includes("bhringraj") ||
+      link.includes("prod-") ||
+      link.includes("kumkumadi") ||
+      link.includes("bhringraj") ||
+      link.includes("sambrani")
     );
   };
 
