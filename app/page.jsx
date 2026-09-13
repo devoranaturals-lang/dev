@@ -204,8 +204,8 @@ export default function HomePage() {
   const activeValueProps = (
     Array.isArray(storefront?.value_props)
       ? storefront.value_props
-      : DEFAULT_STOREFRONT_SETTINGS.value_props
-  ).filter((vp) => vp.is_active !== false);
+      : []
+  ).filter((vp) => vp && vp.is_active !== false);
 
   const isDemoPromo = (p) => {
     if (!p) return false;
@@ -220,20 +220,20 @@ export default function HomePage() {
   const activePromos = (
     Array.isArray(storefront?.promos_list)
       ? storefront.promos_list
-      : (DEFAULT_STOREFRONT_SETTINGS.promos_list || [])
-  ).filter((p) => p.is_active !== false && !isDemoPromo(p));
+      : []
+  ).filter((p) => p && p.is_active !== false && !isDemoPromo(p));
 
   const activeTestimonials = (
     Array.isArray(storefront?.testimonials)
       ? storefront.testimonials
-      : DEFAULT_STOREFRONT_SETTINGS.testimonials
-  ).filter((t) => t.is_active !== false);
+      : []
+  ).filter((t) => t && t.is_active !== false);
 
   const activeFaqs = (
     Array.isArray(storefront?.faqs)
       ? storefront.faqs
-      : DEFAULT_STOREFRONT_SETTINGS.faqs
-  ).filter((f) => f.is_active !== false);
+      : []
+  ).filter((f) => f && f.is_active !== false);
 
   return (
     <div className="space-y-16 pb-20">
@@ -270,30 +270,26 @@ export default function HomePage() {
                 : "lg:col-span-7 space-y-6 text-center lg:text-left"
             }
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-700/60 border border-brand-500/40 text-brand-200 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="w-4 h-4 text-earth-300" />
-              <span>{storefront?.hero_badge || "Pure Organic & Ayurvedic Wellness"}</span>
-            </div>
+            {storefront?.hero_badge ? (
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-700/60 border border-brand-500/40 text-brand-200 text-xs font-semibold backdrop-blur-md">
+                <Sparkles className="w-4 h-4 text-earth-300" />
+                <span>{storefront.hero_badge}</span>
+              </div>
+            ) : null}
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight whitespace-pre-wrap">
-              {storefront?.heroHeading || (
-                <>
-                  Natural Care For Your <br className="hidden sm:inline" />
-                  <span className="bg-gradient-to-r from-earth-200 via-amber-200 to-emerald-200 bg-clip-text text-transparent">
-                    Skin, Hair & Soul
-                  </span>
-                </>
-              )}
+              {storefront?.heroHeading || storefront?.store_name || "Devora Naturals"}
             </h1>
 
-            <p
-              className={`text-base sm:text-lg text-brand-100 leading-relaxed font-light ${
-                storefront?.bestsellerEnabled === false || displayHeroCards.length === 0 ? "max-w-3xl mx-auto" : "max-w-2xl mx-auto lg:mx-0"
-              }`}
-            >
-              {storefront?.heroDescription ||
-                "Elevate your daily self-care ritual with handcrafted Kumkumadi oils, wild-harvested Bhringraj scalp tonics, and sacred organic Sambrani dhoop."}
-            </p>
+            {storefront?.heroDescription ? (
+              <p
+                className={`text-base sm:text-lg text-brand-100 leading-relaxed font-light ${
+                  storefront?.bestsellerEnabled === false || displayHeroCards.length === 0 ? "max-w-3xl mx-auto" : "max-w-2xl mx-auto lg:mx-0"
+                }`}
+              >
+                {storefront.heroDescription}
+              </p>
+            ) : null}
 
             <div
               className={`flex flex-wrap items-center gap-4 pt-2 ${
@@ -310,12 +306,14 @@ export default function HomePage() {
                 <ArrowRight className="w-5 h-5" />
               </a>
 
-              <Link
-                href={storefront?.hero_secondary_btn_link || "/about"}
-                className="px-8 py-4 bg-brand-800/80 hover:bg-brand-800 text-brand-100 font-semibold rounded-2xl transition-colors border border-brand-700 text-base"
-              >
-                {storefront?.hero_secondary_btn_text || "Our Botanical Story"}
-              </Link>
+              {storefront?.hero_secondary_btn_text ? (
+                <Link
+                  href={storefront?.hero_secondary_btn_link || "/about"}
+                  className="px-8 py-4 bg-brand-800/80 hover:bg-brand-800 text-brand-100 font-semibold rounded-2xl transition-colors border border-brand-700 text-base"
+                >
+                  {storefront.hero_secondary_btn_text}
+                </Link>
+              ) : null}
             </div>
           </div>
 
@@ -442,32 +440,37 @@ export default function HomePage() {
       )}
 
       {/* 4. SECONDARY PROMO BANNER */}
-      {storefront?.promoBannerEnabled !== false && (
+      {Boolean(storefront?.promoBannerEnabled) && (storefront?.promoBannerTitle || storefront?.promoBannerImage) && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-8">
           <div className="relative w-full aspect-[21/9] md:aspect-[24/7] rounded-3xl overflow-hidden shadow-xl group">
-            <img
-              src={
-                storefront?.promoBannerImage ||
-                DEFAULT_STOREFRONT_SETTINGS.promoBannerImage
-              }
-              alt="Promo Banner"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-            />
+            {storefront.promoBannerImage && (
+              <img
+                src={storefront.promoBannerImage}
+                alt={storefront.promoBannerTitle || "Promo Banner"}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-r from-brand-900/90 via-brand-900/60 to-transparent"></div>
             <div className="absolute inset-y-0 left-0 p-8 sm:p-12 md:p-16 flex flex-col justify-center text-white max-w-2xl">
-              <span className="text-xs sm:text-sm font-bold text-earth-300 uppercase tracking-widest mb-2 sm:mb-4">
-                {storefront?.promoBannerSubtitle || DEFAULT_STOREFRONT_SETTINGS.promoBannerSubtitle}
-              </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-6">
-                {storefront?.promoBannerTitle || DEFAULT_STOREFRONT_SETTINGS.promoBannerTitle}
-              </h2>
-              <a
-                href={storefront?.promoBannerLink || DEFAULT_STOREFRONT_SETTINGS.promoBannerLink}
-                className="inline-flex w-fit items-center gap-2 px-6 py-3 bg-earth-600 hover:bg-earth-700 text-white font-bold rounded-xl transition-colors shadow-lg cursor-pointer"
-              >
-                <span>{storefront?.promoBannerBtnText || DEFAULT_STOREFRONT_SETTINGS.promoBannerBtnText}</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
+              {storefront.promoBannerSubtitle && (
+                <span className="text-xs sm:text-sm font-bold text-earth-300 uppercase tracking-widest mb-2 sm:mb-4">
+                  {storefront.promoBannerSubtitle}
+                </span>
+              )}
+              {storefront.promoBannerTitle && (
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-6">
+                  {storefront.promoBannerTitle}
+                </h2>
+              )}
+              {storefront.promoBannerBtnText && (
+                <a
+                  href={storefront.promoBannerLink || "#products-section"}
+                  className="inline-flex w-fit items-center gap-2 px-6 py-3 bg-earth-600 hover:bg-earth-700 text-white font-bold rounded-xl transition-colors shadow-lg cursor-pointer"
+                >
+                  <span>{storefront.promoBannerBtnText}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -604,89 +607,79 @@ export default function HomePage() {
       </section>
 
       {/* 7. BRAND SPOTLIGHT / WHY CHOOSE DEVORA */}
-      {storefront?.spotlight_enabled !== false && (
+      {Boolean(storefront?.spotlight_enabled) && Boolean(storefront?.spotlight_title) && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-br from-brand-900 via-brand-950 to-slate-900 rounded-3xl p-8 sm:p-12 lg:p-16 text-white shadow-2xl relative overflow-hidden">
             <div className="absolute right-0 top-0 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
               <div className="lg:col-span-7 space-y-6">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-800/80 border border-brand-700 text-earth-300 text-xs font-bold">
-                  <Flame className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{storefront?.spotlight_badge || DEFAULT_STOREFRONT_SETTINGS.spotlight_badge}</span>
-                </span>
+                {storefront.spotlight_badge && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-800/80 border border-brand-700 text-earth-300 text-xs font-bold">
+                    <Flame className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{storefront.spotlight_badge}</span>
+                  </span>
+                )}
 
                 <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight">
-                  {storefront?.spotlight_title || DEFAULT_STOREFRONT_SETTINGS.spotlight_title}
+                  {storefront.spotlight_title}
                 </h2>
 
-                <p className="text-brand-100 text-sm sm:text-base leading-relaxed font-light">
-                  {storefront?.spotlight_description || DEFAULT_STOREFRONT_SETTINGS.spotlight_description}
-                </p>
+                {storefront.spotlight_description && (
+                  <p className="text-brand-100 text-sm sm:text-base leading-relaxed font-light">
+                    {storefront.spotlight_description}
+                  </p>
+                )}
 
                 {/* 4 Stats counters */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-brand-800">
-                  <div>
-                    <p className="text-2xl sm:text-3xl font-black text-amber-300">
-                      {storefront?.spotlight_stat_1_val || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_1_val}
-                    </p>
-                    <p className="text-xs text-brand-200 mt-0.5">
-                      {storefront?.spotlight_stat_1_lbl || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_1_lbl}
-                    </p>
+                {(storefront.spotlight_stat_1_val || storefront.spotlight_stat_2_val) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-brand-800">
+                    {storefront.spotlight_stat_1_val && (
+                      <div>
+                        <p className="text-2xl sm:text-3xl font-black text-amber-300">{storefront.spotlight_stat_1_val}</p>
+                        <p className="text-xs text-brand-200 mt-0.5">{storefront.spotlight_stat_1_lbl}</p>
+                      </div>
+                    )}
+                    {storefront.spotlight_stat_2_val && (
+                      <div>
+                        <p className="text-2xl sm:text-3xl font-black text-emerald-400">{storefront.spotlight_stat_2_val}</p>
+                        <p className="text-xs text-brand-200 mt-0.5">{storefront.spotlight_stat_2_lbl}</p>
+                      </div>
+                    )}
+                    {storefront.spotlight_stat_3_val && (
+                      <div>
+                        <p className="text-2xl sm:text-3xl font-black text-earth-300">{storefront.spotlight_stat_3_val}</p>
+                        <p className="text-xs text-brand-200 mt-0.5">{storefront.spotlight_stat_3_lbl}</p>
+                      </div>
+                    )}
+                    {storefront.spotlight_stat_4_val && (
+                      <div>
+                        <p className="text-2xl sm:text-3xl font-black text-amber-400">{storefront.spotlight_stat_4_val}</p>
+                        <p className="text-xs text-brand-200 mt-0.5">{storefront.spotlight_stat_4_lbl}</p>
+                      </div>
+                    )}
                   </div>
-
-                  <div>
-                    <p className="text-2xl sm:text-3xl font-black text-emerald-400">
-                      {storefront?.spotlight_stat_2_val || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_2_val}
-                    </p>
-                    <p className="text-xs text-brand-200 mt-0.5">
-                      {storefront?.spotlight_stat_2_lbl || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_2_lbl}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-2xl sm:text-3xl font-black text-earth-300">
-                      {storefront?.spotlight_stat_3_val || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_3_val}
-                    </p>
-                    <p className="text-xs text-brand-200 mt-0.5">
-                      {storefront?.spotlight_stat_3_lbl || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_3_lbl}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-2xl sm:text-3xl font-black text-amber-400">
-                      {storefront?.spotlight_stat_4_val || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_4_val}
-                    </p>
-                    <p className="text-xs text-brand-200 mt-0.5">
-                      {storefront?.spotlight_stat_4_lbl || DEFAULT_STOREFRONT_SETTINGS.spotlight_stat_4_lbl}
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
 
-              <div className="lg:col-span-5 flex justify-center">
-                <div className="relative w-full max-w-sm aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-brand-700/60">
-                  <img
-                    src={
-                      storefront?.spotlight_image || DEFAULT_STOREFRONT_SETTINGS.spotlight_image
-                    }
-                    alt={storefront?.spotlight_title || "Botanical Extraction"}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-950/80 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-6 left-6 right-6 p-3.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-white text-xs">
-                    <p className="font-bold">Traditional Taila-Paka Method</p>
-                    <p className="text-[10px] text-brand-200 mt-0.5">Slow-cooked over natural wood fire in Kerala</p>
+              {storefront.spotlight_image && (
+                <div className="lg:col-span-5 flex justify-center">
+                  <div className="relative w-full max-w-sm aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-brand-700/60">
+                    <img
+                      src={storefront.spotlight_image}
+                      alt={storefront.spotlight_title || "Spotlight"}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </section>
       )}
 
       {/* 8. CUSTOMER TESTIMONIALS & REVIEWS */}
-      {storefront?.testimonials_enabled !== false && activeTestimonials.length > 0 && (
+      {Boolean(storefront?.testimonials_enabled) && activeTestimonials.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
@@ -695,10 +688,9 @@ export default function HomePage() {
             <h2 className="text-3xl font-extrabold text-slate-900">
               {storefront?.testimonials_title || "Loved by Thousands of Natural Beauty Enthusiasts"}
             </h2>
-            <p className="text-xs text-slate-500">
-              {storefront?.testimonials_subtitle ||
-                "Read authentic experiences from genuine buyers across India"}
-            </p>
+            {storefront?.testimonials_subtitle && (
+              <p className="text-xs text-slate-500">{storefront.testimonials_subtitle}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -756,7 +748,7 @@ export default function HomePage() {
       )}
 
       {/* 9. FREQUENTLY ASKED QUESTIONS (FAQS) ACCORDION */}
-      {storefront?.faqs_enabled !== false && activeFaqs.length > 0 && (
+      {Boolean(storefront?.faqs_enabled) && activeFaqs.length > 0 && (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center space-y-2">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-700 flex items-center justify-center gap-1.5">
@@ -766,10 +758,9 @@ export default function HomePage() {
             <h2 className="text-3xl font-extrabold text-slate-900">
               {storefront?.faqs_title || "Frequently Asked Questions"}
             </h2>
-            <p className="text-xs text-slate-500">
-              {storefront?.faqs_subtitle ||
-                "Clear answers about our organic sourcing, usage, and policies"}
-            </p>
+            {storefront?.faqs_subtitle && (
+              <p className="text-xs text-slate-500">{storefront.faqs_subtitle}</p>
+            )}
           </div>
 
           <div className="space-y-3">

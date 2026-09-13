@@ -1,17 +1,17 @@
 -- ==============================================================================
--- DEVORA NATURALS - ONE-CLICK SQL FIX FOR SUPABASE RLS & PERSISTENCE
+-- DEVORA NATURALS - ONE-CLICK SQL FIX FOR SUPABASE RLS, STORAGE & PERSISTENCE
 -- Run this in your Supabase SQL Editor: https://app.supabase.com/project/_/sql
 -- Safe, idempotent, and immediately resolves all permission and sync issues.
 -- ==============================================================================
 
--- 1. Ensure all core tables exist
+-- 1. Ensure all core tables exist with clean defaults
 CREATE TABLE IF NOT EXISTS public.storefront_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "heroBgGradientStart" TEXT DEFAULT '#064e3b',
     "heroBgGradientEnd" TEXT DEFAULT '#065f46',
     "heroBgImage" TEXT DEFAULT '',
-    "heroHeading" TEXT DEFAULT 'Natural Care For Your Skin, Hair & Soul',
-    "heroDescription" TEXT DEFAULT 'Elevate your daily self-care ritual with handcrafted Kumkumadi oils, wild-harvested Bhringraj scalp tonics, and sacred organic Sambrani dhoop.',
+    "heroHeading" TEXT DEFAULT '',
+    "heroDescription" TEXT DEFAULT '',
     "bestsellerEnabled" BOOLEAN DEFAULT false,
     "bestsellerTitle" TEXT DEFAULT '',
     "bestsellerSubtitle" TEXT DEFAULT '',
@@ -28,10 +28,12 @@ CREATE TABLE IF NOT EXISTS public.storefront_settings (
 CREATE TABLE IF NOT EXISTS public.settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_name TEXT DEFAULT 'Devora Naturals',
-    tagline TEXT DEFAULT 'Pure Organic Botanical',
-    email TEXT DEFAULT 'contact@devoranaturals.com',
-    phone TEXT DEFAULT '+91 98765 43210',
-    address TEXT DEFAULT '123 Herbal Way, Kerala, India',
+    tagline TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    email TEXT DEFAULT '',
+    phone TEXT DEFAULT '',
+    address TEXT DEFAULT '',
+    whatsapp TEXT DEFAULT '',
     currency TEXT DEFAULT '₹',
     currency_code TEXT DEFAULT 'INR',
     tax_rate NUMERIC(5, 2) DEFAULT 0.00,
@@ -47,6 +49,8 @@ CREATE TABLE IF NOT EXISTS public.settings (
 -- 2. Ensure required timestamp and profile columns exist
 ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS logo_url TEXT DEFAULT '';
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS extended_data JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS actual_price NUMERIC(10, 2);
@@ -55,19 +59,52 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS return_period_days INTEGER 
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
--- 3. Turn off demo bestseller defaults on storefront_settings table
+-- 3. Reset demo defaults on storefront_settings table
+ALTER TABLE public.storefront_settings ALTER COLUMN "heroHeading" SET DEFAULT '';
+ALTER TABLE public.storefront_settings ALTER COLUMN "heroDescription" SET DEFAULT '';
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerEnabled" SET DEFAULT false;
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerTitle" SET DEFAULT '';
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerSubtitle" SET DEFAULT '';
 ALTER TABLE public.storefront_settings ALTER COLUMN "bestsellerImage" SET DEFAULT '';
+ALTER TABLE public.storefront_settings ALTER COLUMN "promoBannerEnabled" SET DEFAULT false;
+ALTER TABLE public.storefront_settings ALTER COLUMN "promoBannerTitle" SET DEFAULT '';
+ALTER TABLE public.storefront_settings ALTER COLUMN "promoBannerSubtitle" SET DEFAULT '';
+ALTER TABLE public.storefront_settings ALTER COLUMN "promoBannerImage" SET DEFAULT '';
 
--- 4. Grant table and schema permissions to anon, authenticated, and service_role
+-- 4. Reset demo defaults on settings table
+ALTER TABLE public.settings ALTER COLUMN email SET DEFAULT '';
+ALTER TABLE public.settings ALTER COLUMN phone SET DEFAULT '';
+ALTER TABLE public.settings ALTER COLUMN address SET DEFAULT '';
+ALTER TABLE public.settings ALTER COLUMN tagline SET DEFAULT '';
+
+-- 5. Supabase Storage: Provision 'storefront' bucket & configure access policies
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('storefront', 'storefront', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public select storefront storage" ON storage.objects;
+CREATE POLICY "Public select storefront storage" ON storage.objects
+FOR SELECT USING (bucket_id = 'storefront');
+
+DROP POLICY IF EXISTS "Public insert storefront storage" ON storage.objects;
+CREATE POLICY "Public insert storefront storage" ON storage.objects
+FOR INSERT WITH CHECK (bucket_id = 'storefront');
+
+DROP POLICY IF EXISTS "Public update storefront storage" ON storage.objects;
+CREATE POLICY "Public update storefront storage" ON storage.objects
+FOR UPDATE USING (bucket_id = 'storefront');
+
+DROP POLICY IF EXISTS "Public delete storefront storage" ON storage.objects;
+CREATE POLICY "Public delete storefront storage" ON storage.objects
+FOR DELETE USING (bucket_id = 'storefront');
+
+-- 6. Grant schema and table permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
 
--- 3. Drop all restrictive / conflicting policies across all tables
+-- 7. Drop all restrictive / conflicting policies across all tables
 DROP POLICY IF EXISTS "Public read categories" ON public.categories;
 DROP POLICY IF EXISTS "Allow all categories" ON public.categories;
 DROP POLICY IF EXISTS "Public read access for categories" ON public.categories;
@@ -108,7 +145,7 @@ DROP POLICY IF EXISTS "Customers can update their own profile" ON public.custome
 DROP POLICY IF EXISTS "Admin delete customers" ON public.customers;
 DROP POLICY IF EXISTS "Allow all customers" ON public.customers;
 
--- 4. Enable Row Level Security on all tables
+-- 8. Enable Row Level Security on all tables
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
@@ -118,7 +155,7 @@ ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.storefront_settings ENABLE ROW LEVEL SECURITY;
 
--- 5. Create permissive policies for application data synchronization
+-- 9. Create clean, permissive policies for application data synchronization
 CREATE POLICY "Allow all categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all products" ON public.products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all offers" ON public.offers FOR ALL USING (true) WITH CHECK (true);
@@ -128,12 +165,20 @@ CREATE POLICY "Allow all orders" ON public.orders FOR ALL USING (true) WITH CHEC
 CREATE POLICY "Allow all order_items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
 
--- 6. Disable the demo bestseller row in storefront_settings if currently enabled with demo data
+-- 10. Clean out existing demo copy from storefront_settings
 UPDATE public.storefront_settings
 SET "bestsellerEnabled" = false
 WHERE "bestsellerTitle" ILIKE '%Kumkumadi Saffron Glow Oil%' OR "bestsellerTitle" = 'Kumkumadi Saffron Glow Oil';
 
--- 7. Clean all legacy demo records from Supabase tables for a completely fresh store
+UPDATE public.storefront_settings
+SET "heroHeading" = ''
+WHERE "heroHeading" ILIKE '%Natural Care For Your Skin%' OR "heroHeading" = 'Natural Care For Your Skin, Hair & Soul';
+
+UPDATE public.storefront_settings
+SET "heroDescription" = ''
+WHERE "heroDescription" ILIKE '%Elevate your daily self-care ritual%';
+
+-- 11. Clean all legacy demo records from Supabase tables for a completely fresh store
 DELETE FROM public.products
 WHERE id::text IN ('prod-1', 'prod-2', 'prod-3', 'prod-4', 'prod-5', 'prod-6')
    OR id::text LIKE 'demo-%'
@@ -165,20 +210,30 @@ WHERE id::text IN ('DEV-10821', 'DEV-10820', 'DEV-10819', 'DEV-10818')
 
 UPDATE public.settings
 SET email = '', phone = '', address = '', whatsapp = ''
-WHERE email = 'support@devoranaturals.com' OR phone = '+91 8608540400';
+WHERE email = 'support@devoranaturals.com' OR email = 'contact@devoranaturals.com' OR phone = '+91 8608540400' OR phone = '+91 98765 43210';
 
--- 8. Ensure at least 1 storefront row exists with clean defaults
+-- 12. Ensure at least 1 storefront row exists with clean empty defaults (zero demo copy)
 INSERT INTO public.storefront_settings (
     "heroBgGradientStart",
     "heroBgGradientEnd",
     "heroHeading",
     "heroDescription",
-    "bestsellerEnabled"
+    "bestsellerEnabled",
+    "promoBannerEnabled"
 )
-SELECT '#064e3b', '#065f46', 'Natural Care For Your Skin, Hair & Soul', 'Elevate your daily self-care ritual with handcrafted Kumkumadi oils, wild-harvested Bhringraj scalp tonics, and sacred organic Sambrani dhoop.', false
+SELECT '#064e3b', '#065f46', '', '', false, false
 WHERE NOT EXISTS (SELECT 1 FROM public.storefront_settings);
 
--- 9. Refresh PostgREST Schema Cache
+-- 13. Ensure at least 1 settings row exists
+INSERT INTO public.settings (
+    store_name,
+    tagline,
+    description,
+    currency,
+    currency_code
+)
+SELECT 'Devora Naturals', '', '', '₹', 'INR'
+WHERE NOT EXISTS (SELECT 1 FROM public.settings);
+
+-- 14. Refresh PostgREST Schema Cache
 NOTIFY pgrst, 'reload schema';
-
-

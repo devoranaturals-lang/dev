@@ -50,11 +50,11 @@ export default function Navbar() {
           getStorefrontSettings(),
         ]);
         if (cats) setCategories(cats);
-        if (settings) {
+        if (settings || sfSettings) {
           setBranding({
-            store_name: settings.store_name || "Devora Naturals",
-            tagline: settings.tagline || "Pure Organic Botanical",
-            logo_url: settings.logo_url || "",
+            store_name: sfSettings?.store_name || settings?.store_name || "Devora Naturals",
+            tagline: sfSettings?.tagline !== undefined ? sfSettings.tagline : (settings?.tagline || ""),
+            logo_url: sfSettings?.logo_url !== undefined ? sfSettings.logo_url : (settings?.logo_url || ""),
           });
         }
         if (sfSettings?.navbar) {
@@ -70,10 +70,10 @@ export default function Navbar() {
 
     const handleSettingsUpdate = (e) => {
       if (e?.detail) {
-        if (e.detail.store_name || e.detail.tagline || e.detail.logo_url !== undefined) {
+        if (e.detail.store_name || e.detail.tagline !== undefined || e.detail.logo_url !== undefined) {
           setBranding((prev) => ({
             store_name: e.detail.store_name || prev.store_name,
-            tagline: e.detail.tagline || prev.tagline,
+            tagline: e.detail.tagline !== undefined ? e.detail.tagline : prev.tagline,
             logo_url: e.detail.logo_url !== undefined ? e.detail.logo_url : prev.logo_url,
           }));
         }
@@ -86,11 +86,11 @@ export default function Navbar() {
       } else {
         import("../lib/supabase").then(async ({ getContactDetails, getStorefrontSettings }) => {
           const [s, sf] = await Promise.all([getContactDetails(), getStorefrontSettings()]);
-          if (s) {
+          if (s || sf) {
             setBranding({
-              store_name: s.store_name || "Devora Naturals",
-              tagline: s.tagline || "Pure Organic Botanical",
-              logo_url: s.logo_url || "",
+              store_name: sf?.store_name || s?.store_name || "Devora Naturals",
+              tagline: sf?.tagline !== undefined ? sf.tagline : (s?.tagline || ""),
+              logo_url: sf?.logo_url !== undefined ? sf.logo_url : (s?.logo_url || ""),
             });
           }
           if (sf?.navbar) {

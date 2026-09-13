@@ -58,14 +58,12 @@ export default function Footer() {
   });
 
   const [footerConfig, setFooterConfig] = useState({
-    description: "Crafting pure, organic herbal products deeply rooted in Ayurvedic heritage. Dedicated to your wellness, radiant skin, and authentic traditional rituals.",
+    description: "",
     show_social_links: true,
     social_heading: "Follow Us Online",
     col1_heading: "Categories",
     col1_show_dynamic_categories: true,
-    col1_links: [
-      { id: "fcol1-all", label: "View Full Catalog", href: "/products", is_active: true },
-    ],
+    col1_links: [],
     col2_heading: "Devora Naturals",
     col2_links: [
       { id: "fcol2-1", label: "About Our Brand", href: "/about", is_active: true },
@@ -77,7 +75,7 @@ export default function Footer() {
     show_contact_address: true,
     show_social_badges: true,
     copyright_text: "Devora Naturals. All Rights Reserved.",
-    badge_text: "Handcrafted with ❤️ for natural wellness",
+    badge_text: "Handcrafted for natural wellness",
     show_bottom_badge: true,
   });
 
@@ -89,12 +87,27 @@ export default function Footer() {
           getStorefrontSettings(),
           getCategories(),
         ]);
-        if (contactData) setContactDetails(contactData);
+        if (contactData || sfData) {
+          setContactDetails((prev) => ({
+            ...prev,
+            ...(contactData || {}),
+            store_name: sfData?.store_name || contactData?.store_name || "Devora Naturals",
+            tagline: sfData?.tagline !== undefined ? sfData.tagline : (contactData?.tagline || ""),
+            logo_url: sfData?.logo_url !== undefined ? sfData.logo_url : (contactData?.logo_url || ""),
+          }));
+        }
         if (cats) setCategories(cats);
+        const desc = sfData?.footer?.description || sfData?.description || contactData?.description || "";
         if (sfData?.footer) {
           setFooterConfig((prev) => ({
             ...prev,
             ...sfData.footer,
+            description: desc,
+          }));
+        } else if (desc) {
+          setFooterConfig((prev) => ({
+            ...prev,
+            description: desc,
           }));
         }
       } catch (e) {
@@ -119,7 +132,16 @@ export default function Footer() {
           setContactDetails((prev) => ({ ...prev, ...e.detail }));
         }
         if (e.detail.footer) {
-          setFooterConfig((prev) => ({ ...prev, ...e.detail.footer }));
+          setFooterConfig((prev) => ({
+            ...prev,
+            ...e.detail.footer,
+            description: e.detail.footer?.description || e.detail.description || prev.description || "",
+          }));
+        } else if (e.detail.description !== undefined) {
+          setFooterConfig((prev) => ({
+            ...prev,
+            description: e.detail.description || "",
+          }));
         }
       } else {
         loadSettings();
@@ -231,9 +253,11 @@ export default function Footer() {
                 )}
               </div>
             </div>
-            <p className="text-sm text-brand-200/80 leading-relaxed">
-              {footerConfig.description || "Crafting pure, organic herbal products deeply rooted in Ayurvedic heritage. Dedicated to your wellness, radiant skin, and authentic traditional rituals."}
-            </p>
+            {footerConfig.description ? (
+              <p className="text-sm text-brand-200/80 leading-relaxed">
+                {footerConfig.description}
+              </p>
+            ) : null}
 
             {/* Social Media Channels in Brand Column */}
             {activeLinks.length > 0 && (

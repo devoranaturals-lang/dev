@@ -275,14 +275,15 @@ export default function AdminStorefrontPage() {
             ...DEFAULT_STOREFRONT_SETTINGS,
             ...(data || {}),
             store_name: contact?.store_name || data?.store_name || "Devora Naturals",
-            tagline: contact?.tagline || data?.tagline || "Pure Organic Botanical",
-            logo_url: contact?.logo_url || data?.logo_url || "",
-            hero_cards: data?.hero_cards || DEFAULT_STOREFRONT_SETTINGS.hero_cards,
-            announcements: data?.announcements || DEFAULT_STOREFRONT_SETTINGS.announcements,
-            value_props: data?.value_props || DEFAULT_STOREFRONT_SETTINGS.value_props,
-            promos_list: data?.promos_list || DEFAULT_STOREFRONT_SETTINGS.promos_list,
-            testimonials: data?.testimonials || DEFAULT_STOREFRONT_SETTINGS.testimonials,
-            faqs: data?.faqs || DEFAULT_STOREFRONT_SETTINGS.faqs,
+            tagline: contact?.tagline !== undefined ? contact.tagline : (data?.tagline || ""),
+            logo_url: contact?.logo_url !== undefined ? contact.logo_url : (data?.logo_url || ""),
+            description: data?.description || contact?.description || prev.description || "",
+            hero_cards: Array.isArray(data?.hero_cards) ? data.hero_cards : [],
+            announcements: Array.isArray(data?.announcements) ? data.announcements : [],
+            value_props: Array.isArray(data?.value_props) ? data.value_props : [],
+            promos_list: Array.isArray(data?.promos_list) ? data.promos_list : [],
+            testimonials: Array.isArray(data?.testimonials) ? data.testimonials : [],
+            faqs: Array.isArray(data?.faqs) ? data.faqs : [],
             navbar: data?.navbar || DEFAULT_STOREFRONT_SETTINGS.navbar,
             footer: data?.footer || DEFAULT_STOREFRONT_SETTINGS.footer,
           }));
@@ -304,14 +305,29 @@ export default function AdminStorefrontPage() {
     });
   };
 
-  const handleImageUpload = (e, fieldName = "bestsellerImage") => {
-    const file = e.target.files[0];
-    if (file) {
+  const [uploadingField, setUploadingField] = useState(null);
+
+  const handleImageUpload = async (e, fieldName = "bestsellerImage") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingField(fieldName);
+    try {
+      const { uploadStorefrontImage } = await import("../../../lib/supabase");
+      const publicUrl = await uploadStorefrontImage(file, fieldName);
+      setForm((prev) => ({ ...prev, [fieldName]: publicUrl }));
+      setSuccessMsg("Image uploaded successfully to Supabase Storage!");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      console.warn("Upload via API failed, using base64 fallback:", err);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setForm({ ...form, [fieldName]: reader.result });
+        if (reader.result) {
+          setForm((prev) => ({ ...prev, [fieldName]: reader.result }));
+        }
       };
       reader.readAsDataURL(file);
+    } finally {
+      setUploadingField(null);
     }
   };
 
@@ -320,12 +336,20 @@ export default function AdminStorefrontPage() {
     setSaving(true);
     setSuccessMsg("");
     try {
+      const updatedForm = {
+        ...form,
+        footer: {
+          ...(form.footer || {}),
+          description: form.description || form.footer?.description || "",
+        },
+      };
       await Promise.all([
-        updateStorefrontSettings(form),
+        updateStorefrontSettings(updatedForm),
         updateContactDetails({
           store_name: form.store_name,
           tagline: form.tagline,
           logo_url: form.logo_url,
+          description: form.description,
         }),
       ]);
       setSuccessMsg("Storefront branding and design saved successfully! Live website has been updated.");
@@ -523,9 +547,15 @@ export default function AdminStorefrontPage() {
     setHeroCardModalOpen(true);
   };
 
-  const handleHeroCardModalImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleHeroCardModalImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { uploadStorefrontImage } = await import("../../../lib/supabase");
+      const url = await uploadStorefrontImage(file, "hero_cards");
+      setHeroCardForm((prev) => ({ ...prev, image_url: url }));
+    } catch (err) {
+      console.warn("Upload to storage failed, using fallback:", err);
       const reader = new FileReader();
       reader.onloadend = () => {
         setHeroCardForm((prev) => ({ ...prev, image_url: reader.result }));
@@ -534,9 +564,15 @@ export default function AdminStorefrontPage() {
     }
   };
 
-  const handleTestimonialModalImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleTestimonialModalImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { uploadStorefrontImage } = await import("../../../lib/supabase");
+      const url = await uploadStorefrontImage(file, "testimonials");
+      setTestimonialForm((prev) => ({ ...prev, image_url: url }));
+    } catch (err) {
+      console.warn("Upload to storage failed, using fallback:", err);
       const reader = new FileReader();
       reader.onloadend = () => {
         setTestimonialForm((prev) => ({ ...prev, image_url: reader.result }));
@@ -579,25 +615,41 @@ export default function AdminStorefrontPage() {
 
   const handlePromoCardModalImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    try {
+      const { uploadStorefrontImage } = await import("../../../lib/supabase");
+      const url = await uploadStorefrontImage(file, "promos");
+      setPromoCardForm((prev) => ({ ...prev, image_url: url }));
+    } catch (err) {
+      console.warn("Upload to storage failed, using fallback:", err);
       try {
         const dataUrl = await compressImage(file, 640, 640, 0.78);
         if (dataUrl) {
           setPromoCardForm((prev) => ({ ...prev, image_url: dataUrl }));
+          return;
         }
-      } catch (err) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPromoCardForm((prev) => ({ ...prev, image_url: reader.result }));
-        };
-        reader.readAsDataURL(file);
-      }
+      } catch (_) {}
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPromoCardForm((prev) => ({ ...prev, image_url: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSpotlightImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    try {
+      const { uploadStorefrontImage } = await import("../../../lib/supabase");
+      const url = await uploadStorefrontImage(file, "spotlight");
+      const newForm = { ...form, spotlight_image: url };
+      setForm(newForm);
+      await updateStorefrontSettings(newForm);
+      setSuccessMsg("Spotlight image uploaded and updated on customer homepage!");
+      setTimeout(() => setSuccessMsg(""), 3500);
+    } catch (err) {
+      console.warn("Upload to storage failed, using fallback:", err);
       try {
         const dataUrl = await compressImage(file, 900, 900, 0.82);
         if (dataUrl) {
@@ -606,25 +658,34 @@ export default function AdminStorefrontPage() {
           await updateStorefrontSettings(newForm);
           setSuccessMsg("Spotlight image uploaded and updated on customer homepage!");
           setTimeout(() => setSuccessMsg(""), 3500);
+          return;
         }
-      } catch (err) {
-        console.error("Spotlight image upload compression error:", err);
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          const newForm = { ...form, spotlight_image: reader.result };
-          setForm(newForm);
-          await updateStorefrontSettings(newForm);
-          setSuccessMsg("Spotlight image uploaded and updated on customer homepage!");
-          setTimeout(() => setSuccessMsg(""), 3500);
-        };
-        reader.readAsDataURL(file);
-      }
+      } catch (_) {}
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const newForm = { ...form, spotlight_image: reader.result };
+        setForm(newForm);
+        await updateStorefrontSettings(newForm);
+        setSuccessMsg("Spotlight image uploaded and updated on customer homepage!");
+        setTimeout(() => setSuccessMsg(""), 3500);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleHeroBannerImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    try {
+      const { uploadStorefrontImage } = await import("../../../lib/supabase");
+      const url = await uploadStorefrontImage(file, "hero_banner");
+      const newForm = { ...form, hero_banner_image: url };
+      setForm(newForm);
+      await updateStorefrontSettings(newForm);
+      setSuccessMsg("Hero banner image uploaded and updated on live storefront!");
+      setTimeout(() => setSuccessMsg(""), 3500);
+    } catch (err) {
+      console.warn("Upload to storage failed, using fallback:", err);
       try {
         const dataUrl = await compressImage(file, 1600, 1200, 0.85);
         if (dataUrl) {
@@ -633,19 +694,18 @@ export default function AdminStorefrontPage() {
           await updateStorefrontSettings(newForm);
           setSuccessMsg("Hero banner image uploaded and updated on live storefront!");
           setTimeout(() => setSuccessMsg(""), 3500);
+          return;
         }
-      } catch (err) {
-        console.error("Hero banner image upload compression error:", err);
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          const newForm = { ...form, hero_banner_image: reader.result };
-          setForm(newForm);
-          await updateStorefrontSettings(newForm);
-          setSuccessMsg("Hero banner image uploaded and updated on live storefront!");
-          setTimeout(() => setSuccessMsg(""), 3500);
-        };
-        reader.readAsDataURL(file);
-      }
+      } catch (_) {}
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const newForm = { ...form, hero_banner_image: reader.result };
+        setForm(newForm);
+        await updateStorefrontSettings(newForm);
+        setSuccessMsg("Hero banner image uploaded and updated on live storefront!");
+        setTimeout(() => setSuccessMsg(""), 3500);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -1130,6 +1190,11 @@ export default function AdminStorefrontPage() {
                     <span className="block text-[11px] uppercase tracking-widest text-brand-300 font-semibold truncate max-w-[260px] sm:max-w-md">
                       {form.tagline || "Pure Organic Botanical"}
                     </span>
+                    {form.description && (
+                      <span className="block text-[10px] text-brand-200/80 line-clamp-1 max-w-[260px] sm:max-w-md mt-0.5">
+                        {form.description}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1207,6 +1272,29 @@ export default function AdminStorefrontPage() {
                 </div>
               </div>
 
+              {/* Brand Description / Store Story */}
+              <div className="md:col-span-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Brand Description / Store Story
+                  </label>
+                  <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                    Customer Footer Brand Story
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  name="description"
+                  value={form.description || ""}
+                  onChange={handleChange}
+                  placeholder="Share your brand story, mission, and commitment to pure organic botanical self-care..."
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-700 shadow-2xs resize-none"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Displayed beneath the brand logo in your customer website footer.
+                </p>
+              </div>
+
               {/* Storefront Logo Upload & Direct URL */}
               <div className="md:col-span-2 bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
@@ -1250,7 +1338,7 @@ export default function AdminStorefrontPage() {
                         {form.logo_url ? "Custom Logo Active" : "Default Botanical Icon"}
                       </p>
                       <p className="text-[11px] text-slate-500">
-                        {form.logo_url ? "Transparent PNG or SVG recommended" : "Leaf icon rendered in header & footer"}
+                        {form.logo_url ? "Saved in Supabase Storage" : "Leaf icon rendered in header & footer"}
                       </p>
                     </div>
                   </div>
@@ -1259,27 +1347,18 @@ export default function AdminStorefrontPage() {
                   <div className="flex-1 w-full space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 rounded-xl text-xs font-bold transition-colors">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Logo File (PNG / JPG / SVG / WebP)</span>
+                        {uploadingField === "logo_url" ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-700" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5" />
+                        )}
+                        <span>{uploadingField === "logo_url" ? "Uploading to Storage..." : "Upload Logo File (PNG / JPG / SVG / WebP)"}</span>
                         <input
                           type="file"
                           accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml"
                           className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                if (reader.result) {
-                                  setForm((prev) => ({
-                                    ...prev,
-                                    logo_url: reader.result,
-                                  }));
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
+                          disabled={uploadingField === "logo_url"}
+                          onChange={(e) => handleImageUpload(e, "logo_url")}
                         />
                       </label>
                       <span className="text-[10px] text-slate-400 font-bold uppercase">or image URL</span>
