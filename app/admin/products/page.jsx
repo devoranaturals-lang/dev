@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProducts, addProduct, updateProduct, deleteProduct, getCategories, clearAllProducts, loadDemoProducts } from "../../../lib/supabase";
-import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
+import { getProducts, addProduct, updateProduct, deleteProduct, getCategories, clearAllProducts } from "../../../lib/supabase";
+import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw, ShieldCheck } from "lucide-react";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -147,13 +147,6 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleLoadDemo = async () => {
-    if (confirm("Load standard sample demo products into the store?")) {
-      await loadDemoProducts();
-      await loadData();
-    }
-  };
-
   const filteredProducts = products.filter((p) => {
     if (!p) return false;
     const nameMatch = (p.name || "").toLowerCase().includes(searchQuery.toLowerCase());
@@ -183,12 +176,12 @@ export default function AdminProductsPage() {
 
           <button
             type="button"
-            onClick={handleLoadDemo}
+            onClick={loadData}
             className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all border border-slate-200 cursor-pointer"
-            title="Load sample demo products"
+            title="Refresh products list from database"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Load Demo Data</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
           </button>
 
           <button
