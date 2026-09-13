@@ -149,13 +149,59 @@ async function syncToSupabaseBackground(type, data) {
   try {
     if (type === "settings") {
       const { data: existing } = await serverSupabase.from("settings").select("id").limit(1).maybeSingle();
-      const payload = { ...data, updated_at: new Date().toISOString() };
-      delete payload.id;
+      const basePayload = {
+        updated_at: new Date().toISOString(),
+      };
+      if (data.store_name !== undefined) basePayload.store_name = data.store_name;
+      if (data.tagline !== undefined) basePayload.tagline = data.tagline;
+      if (data.description !== undefined) basePayload.description = data.description;
+      if (data.email !== undefined) basePayload.email = data.email;
+      if (data.phone !== undefined) basePayload.phone = data.phone;
+      if (data.address !== undefined) basePayload.address = data.address;
+      if (data.whatsapp !== undefined) basePayload.whatsapp = data.whatsapp;
+      if (data.logo_url !== undefined) basePayload.logo_url = data.logo_url;
+      if (data.free_shipping_threshold !== undefined) basePayload.free_shipping_threshold = Number(data.free_shipping_threshold);
+
+      const fullPayload = { ...basePayload, ...data, extended_data: data };
+      delete fullPayload.id;
+
       if (existing?.id) {
-        await serverSupabase.from("settings").update(payload).eq("id", existing.id);
+        const { error: fullErr } = await serverSupabase.from("settings").update(fullPayload).eq("id", existing.id);
+        if (fullErr) {
+          await serverSupabase.from("settings").update(basePayload).eq("id", existing.id);
+        }
       } else {
-        await serverSupabase.from("settings").insert([payload]);
+        const { error: fullInsErr } = await serverSupabase.from("settings").insert([fullPayload]);
+        if (fullInsErr) {
+          await serverSupabase.from("settings").insert([basePayload]);
+        }
       }
+
+      // Mirror contact details into storefront_settings.extended_data
+      try {
+        const { data: sfExisting } = await serverSupabase.from("storefront_settings").select("id, extended_data").limit(1).maybeSingle();
+        if (sfExisting?.id) {
+          const curExt = (sfExisting.extended_data && typeof sfExisting.extended_data === "object") ? sfExisting.extended_data : {};
+          await serverSupabase.from("storefront_settings").update({
+            extended_data: {
+              ...curExt,
+              contact: {
+                email: data.email || "",
+                phone: data.phone || "",
+                address: data.address || "",
+                whatsapp: data.whatsapp || "",
+                support_hours: data.support_hours || "",
+              },
+              email: data.email || "",
+              phone: data.phone || "",
+              address: data.address || "",
+              whatsapp: data.whatsapp || "",
+              support_hours: data.support_hours || "",
+            },
+            updated_at: new Date().toISOString(),
+          }).eq("id", sfExisting.id);
+        }
+      } catch (_) {}
     } else if (type === "storefront") {
       const { data: existing } = await serverSupabase.from("storefront_settings").select("id, extended_data").limit(1).maybeSingle();
       const payload = {

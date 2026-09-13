@@ -18,7 +18,14 @@ import {
   Share2,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { getContactDetails, getStorefrontSettings, getCategories } from "../lib/supabase";
+import {
+  getContactDetails,
+  getStorefrontSettings,
+  getCategories,
+  isDemoContactEmail,
+  isDemoContactPhone,
+  isDemoContactAddress,
+} from "../lib/supabase";
 
 function getSocialIcon(iconName) {
   switch (iconName) {
@@ -91,6 +98,9 @@ export default function Footer() {
           setContactDetails((prev) => ({
             ...prev,
             ...(contactData || {}),
+            email: isDemoContactEmail(contactData?.email) ? "" : (contactData?.email || prev.email),
+            phone: isDemoContactPhone(contactData?.phone) ? "" : (contactData?.phone || prev.phone),
+            address: isDemoContactAddress(contactData?.address) ? "" : (contactData?.address || prev.address),
             store_name: sfData?.store_name || contactData?.store_name || "Devora Naturals",
             tagline: sfData?.tagline !== undefined ? sfData.tagline : (contactData?.tagline || ""),
             logo_url: sfData?.logo_url !== undefined ? sfData.logo_url : (contactData?.logo_url || ""),
@@ -129,7 +139,13 @@ export default function Footer() {
       }
       if (e?.detail) {
         if (e.detail.email !== undefined || e.detail.phone !== undefined || e.detail.address !== undefined || e.detail.store_name || e.detail.logo_url !== undefined || e.detail.social_links) {
-          setContactDetails((prev) => ({ ...prev, ...e.detail }));
+          setContactDetails((prev) => ({
+            ...prev,
+            ...e.detail,
+            email: isDemoContactEmail(e.detail.email) ? "" : (e.detail.email !== undefined ? e.detail.email : prev.email),
+            phone: isDemoContactPhone(e.detail.phone) ? "" : (e.detail.phone !== undefined ? e.detail.phone : prev.phone),
+            address: isDemoContactAddress(e.detail.address) ? "" : (e.detail.address !== undefined ? e.detail.address : prev.address),
+          }));
         }
         if (e.detail.footer) {
           setFooterConfig((prev) => ({

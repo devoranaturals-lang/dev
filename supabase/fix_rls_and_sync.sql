@@ -51,6 +51,26 @@ ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH 
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS logo_url TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS support_hours TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS order_prefix TEXT DEFAULT 'DEV-';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS state_shipping_enabled BOOLEAN DEFAULT true;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS shipping_charge_tamilnadu NUMERIC(10, 2) DEFAULT 50.00;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS shipping_charge_other_states NUMERIC(10, 2) DEFAULT 100.00;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS standard_shipping_charge NUMERIC(10, 2) DEFAULT 50.00;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS delivery_estimate TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS return_policy_enabled BOOLEAN DEFAULT true;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS return_window_days INTEGER DEFAULT 7;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS return_policy_text TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS instagram_url TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS facebook_url TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS youtube_url TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS social_links_enabled BOOLEAN DEFAULT true;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS about_badge TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS about_title TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS about_description TEXT DEFAULT '';
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS about_cards JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS extended_data JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 ALTER TABLE public.storefront_settings ADD COLUMN IF NOT EXISTS extended_data JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS actual_price NUMERIC(10, 2);
@@ -210,7 +230,10 @@ WHERE id::text IN ('DEV-10821', 'DEV-10820', 'DEV-10819', 'DEV-10818')
 
 UPDATE public.settings
 SET email = '', phone = '', address = '', whatsapp = ''
-WHERE email = 'support@devoranaturals.com' OR email = 'contact@devoranaturals.com' OR phone = '+91 8608540400' OR phone = '+91 98765 43210';
+WHERE email IN ('support@devoranaturals.com', 'contact@devoranaturals.com')
+   OR phone IN ('+91 8608540400', '+91 98765 43210', '9876543210', '8608540400', '+91 86085 40400')
+   OR address ILIKE '%123 Herbal Way%'
+   OR address ILIKE '%Kerala Botanical Organic Farm%';
 
 -- 12. Ensure at least 1 storefront row exists with clean empty defaults (zero demo copy)
 INSERT INTO public.storefront_settings (

@@ -17,7 +17,12 @@ import {
   Linkedin,
   Globe,
 } from "lucide-react";
-import { getContactDetails } from "../../lib/supabase";
+import {
+  getContactDetails,
+  isDemoContactEmail,
+  isDemoContactPhone,
+  isDemoContactAddress,
+} from "../../lib/supabase";
 
 function getSocialIcon(iconName) {
   switch (iconName) {
@@ -45,27 +50,69 @@ function getSocialIcon(iconName) {
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [contactDetails, setContactDetails] = useState({
-    email: "",
-    phone: "",
-    address: "",
-    social_links_enabled: true,
-    social_links: [],
-    support_hours: "",
+  const [contactDetails, setContactDetails] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("devora_mock_settings_v1");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          return {
+            email: isDemoContactEmail(parsed.email) ? "" : (parsed.email || ""),
+            phone: isDemoContactPhone(parsed.phone) ? "" : (parsed.phone || ""),
+            address: isDemoContactAddress(parsed.address) ? "" : (parsed.address || ""),
+            whatsapp: parsed.whatsapp || "",
+            support_hours: parsed.support_hours || "",
+            social_links_enabled: parsed.social_links_enabled !== false,
+            social_links: Array.isArray(parsed.social_links) ? parsed.social_links : [],
+          };
+        }
+      } catch (_) {}
+    }
+    return {
+      email: "",
+      phone: "",
+      address: "",
+      social_links_enabled: true,
+      social_links: [],
+      support_hours: "",
+    };
   });
 
   useEffect(() => {
     async function loadSettings() {
       try {
         const data = await getContactDetails();
-        if (data) setContactDetails(data);
+        if (data) {
+          setContactDetails((prev) => ({
+            ...prev,
+            ...data,
+            email: isDemoContactEmail(data.email) ? "" : (data.email || ""),
+            phone: isDemoContactPhone(data.phone) ? "" : (data.phone || ""),
+            address: isDemoContactAddress(data.address) ? "" : (data.address || ""),
+            support_hours: data.support_hours || "",
+          }));
+        }
       } catch (e) {
         console.error("Contact details fetch error:", e);
       }
     }
     loadSettings();
 
-    const handleUpdate = () => loadSettings();
+    const handleUpdate = (e) => {
+      if (e?.detail) {
+        setContactDetails((prev) => ({
+          ...prev,
+          ...e.detail,
+          email: isDemoContactEmail(e.detail.email) ? "" : (e.detail.email !== undefined ? e.detail.email : prev.email),
+          phone: isDemoContactPhone(e.detail.phone) ? "" : (e.detail.phone !== undefined ? e.detail.phone : prev.phone),
+          address: isDemoContactAddress(e.detail.address) ? "" : (e.detail.address !== undefined ? e.detail.address : prev.address),
+          support_hours: e.detail.support_hours !== undefined ? e.detail.support_hours : prev.support_hours,
+        }));
+      } else {
+        loadSettings();
+      }
+    };
+
     const handleStorageChange = (e) => {
       if (
         e.key === "devora_settings_sync_ping" ||
