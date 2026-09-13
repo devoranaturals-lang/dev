@@ -95,8 +95,8 @@
       "isActive": true,
       "showBanner": true,
       "showProductPage": true,
-      "hasTimer": true,
-      "timerEnd": "2026-09-18T02:53:41.838Z"
+      "hasTimer": false,
+      "timerEnd": ""
     },
     {
       "id": "off-welcome10",

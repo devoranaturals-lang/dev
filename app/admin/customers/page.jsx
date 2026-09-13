@@ -226,9 +226,10 @@ export default function AdminCustomersPage() {
 
   // Get purchases/orders for a given customer
   const getCustomerOrders = (customer) => {
-    if (!customer) return [];
-    // 1. Check real matched orders
-    const matched = orders.filter((o) => {
+    if (!customer || !orders || orders.length === 0) return [];
+
+    // Check real matched orders
+    return orders.filter((o) => {
       const matchId = o.customer_id && String(o.customer_id) === String(customer.id);
       const matchEmail =
         o.customer_email &&
@@ -237,52 +238,6 @@ export default function AdminCustomersPage() {
       const matchPhone = o.customer_phone && customer.phone && o.customer_phone === customer.phone;
       return matchId || matchEmail || matchPhone;
     });
-
-    if (matched.length > 0) {
-      return matched;
-    }
-
-    // 2. If no direct raw orders exist, synthesize structured order history from customer metrics
-    const count = Number(customer.total_orders || 1);
-    const total = Number(customer.total_spent || 1200);
-    const avg = Math.round(total / count);
-
-    const syntheticOrders = [];
-    const dateBase = customer.created_at ? new Date(customer.created_at) : new Date("2026-08-15");
-
-    for (let i = 0; i < count; i++) {
-      const orderDate = new Date(dateBase.getTime() + i * 4 * 86400000);
-      const isLatest = i === count - 1;
-      syntheticOrders.push({
-        id: `DEV-${10700 + (parseInt(customer.id.replace(/\D/g, "") || "1") * 20) + i}`,
-        customer_id: customer.id,
-        customer_name: customer.name,
-        customer_email: customer.email,
-        total_amount: isLatest ? total - avg * (count - 1) : avg,
-        status: isLatest ? "Shipped" : "Delivered",
-        payment_method: i % 2 === 0 ? "UPI (Online)" : "Cash on Delivery",
-        created_at: orderDate.toISOString(),
-        order_items: [
-          {
-            id: `item-${i}-1`,
-            product_name:
-              i % 2 === 0
-                ? "Kumkumadi Herbal Radiant Face Oil"
-                : "Bhringraj & Neem Intensive Hair Growth Oil",
-            quantity: 1,
-            price: i % 2 === 0 ? 499 : 389,
-          },
-          {
-            id: `item-${i}-2`,
-            product_name: "Pure Ayurvedic Herbal Ubtan & Rose Water",
-            quantity: 1,
-            price: Math.max(100, (isLatest ? total - avg * (count - 1) : avg) - (i % 2 === 0 ? 499 : 389)),
-          },
-        ],
-      });
-    }
-
-    return syntheticOrders.reverse();
   };
 
   // Export to CSV
@@ -939,66 +894,74 @@ export default function AdminCustomersPage() {
               </div>
 
               <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                {getCustomerOrders(selectedCustomer).map((order) => (
-                  <div
-                    key={order.id}
-                    className="p-3.5 bg-white rounded-2xl border border-slate-200 hover:border-brand-500 transition-colors text-xs space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 font-mono">{order.id}</span>
-                        <span
-                          className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                            order.status === "Delivered"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : order.status === "Shipped"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {order.status}
+                {getCustomerOrders(selectedCustomer).length === 0 ? (
+                  <div className="p-4 text-center rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 text-xs font-medium">
+                    No purchases or orders recorded for this customer yet.
+                  </div>
+                ) : (
+                  getCustomerOrders(selectedCustomer).map((order) => (
+                    <div
+                      key={order.id}
+                      className="p-3.5 bg-white rounded-2xl border border-slate-200 hover:border-brand-500 transition-colors text-xs space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 font-mono">{order.id}</span>
+                          <span
+                            className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                              order.status === "Delivered"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : order.status === "Shipped"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </div>
+                        <span className="font-black text-emerald-700 text-sm">
+                          ₹{Number(order.total_amount || 0).toLocaleString("en-IN")}
                         </span>
                       </div>
-                      <span className="font-black text-emerald-700 text-sm">
-                        ₹{Number(order.total_amount || 0).toLocaleString("en-IN")}
-                      </span>
-                    </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(order.created_at).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <span className="flex items-center gap-1 font-medium text-slate-500">
-                        <CreditCard className="w-3 h-3" />
-                        {order.payment_method || "Online"}
-                      </span>
-                    </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {order.created_at
+                            ? new Date(order.created_at).toLocaleDateString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "Recent"}
+                        </span>
+                        <span className="flex items-center gap-1 font-medium text-slate-500">
+                          <CreditCard className="w-3 h-3" />
+                          {order.payment_method || "Online"}
+                        </span>
+                      </div>
 
-                    {(() => {
-                      const orderItemsList = order.order_items || order.items || [];
-                      if (orderItemsList.length === 0) return null;
-                      return (
-                        <div className="pt-2 border-t border-slate-100 space-y-1">
-                          {orderItemsList.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
-                              <span className="line-clamp-1">
-                                • {item.product_name || item.name || "Ayurvedic Product"} <strong className="text-slate-900">x{item.quantity || 1}</strong>
-                              </span>
-                              <span className="font-mono text-slate-800">
-                                ₹{(Number(item.price || 0) * (item.quantity || 1)).toLocaleString("en-IN")}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ))}
+                      {(() => {
+                        const orderItemsList = order.order_items || order.items || [];
+                        if (orderItemsList.length === 0) return null;
+                        return (
+                          <div className="pt-2 border-t border-slate-100 space-y-1">
+                            {orderItemsList.map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
+                                <span className="line-clamp-1">
+                                  • {item.product_name || item.name || "Ayurvedic Product"} <strong className="text-slate-900">x{item.quantity || 1}</strong>
+                                </span>
+                                <span className="font-mono text-slate-800">
+                                  ₹{(Number(item.price || 0) * (item.quantity || 1)).toLocaleString("en-IN")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -1478,32 +1441,38 @@ export default function AdminCustomersPage() {
                 Recent Customer Purchases & Orders
               </h4>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {orders.slice(0, 8).map((ord) => (
-                  <div
-                    key={ord.id}
-                    className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-slate-900">{ord.id}</span>
-                        <span className="font-semibold text-slate-700">{ord.customer_name}</span>
-                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                          {ord.status}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {(ord.order_items || ord.items)?.map((it) => it.product_name || it.name).join(", ") || "Ayurvedic products"}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="font-black text-emerald-800 text-xs">
-                        ₹{Number(ord.total_amount || 0).toLocaleString("en-IN")}
-                      </p>
-                      <p className="text-[10px] text-slate-400">{ord.payment_method || "Paid"}</p>
-                    </div>
+                {orders.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 text-xs">
+                    No customer purchases or orders recorded yet.
                   </div>
-                ))}
+                ) : (
+                  orders.slice(0, 8).map((ord) => (
+                    <div
+                      key={ord.id}
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-900">{ord.id}</span>
+                          <span className="font-semibold text-slate-700">{ord.customer_name}</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                            {ord.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {(ord.order_items || ord.items)?.map((it) => it.product_name || it.name).join(", ") || "Ayurvedic products"}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-black text-emerald-800 text-xs">
+                          ₹{Number(ord.total_amount || 0).toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-[10px] text-slate-400">{ord.payment_method || "Paid"}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
