@@ -81,7 +81,10 @@ export async function DELETE(request, { params }) {
           .from("order_items")
           .delete()
           .eq("order_id", id);
-        if (itemsError) console.warn("order_items deletion warning:", itemsError.message);
+        if (itemsError) {
+          console.warn("order_items deletion warning:", itemsError.message);
+          return NextResponse.json({ error: "Failed to delete order items: " + itemsError.message }, { status: 500 });
+        }
       } catch (err) {
         console.warn("order_items deletion exception:", err);
       }
@@ -92,7 +95,10 @@ export async function DELETE(request, { params }) {
           .from("orders")
           .delete()
           .eq("id", id);
-        if (deleteError) console.warn("orders deletion warning:", deleteError.message);
+        if (deleteError) {
+          console.warn("orders deletion warning:", deleteError.message);
+          return NextResponse.json({ error: "Failed to delete order: " + deleteError.message }, { status: 500 });
+        }
       } catch (err) {
         console.warn("orders deletion exception:", err);
       }
