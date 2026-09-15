@@ -149,17 +149,7 @@ export default function AnnouncementBar() {
     });
 
     // Fallback if none are configured or active
-    if (list.length === 0) {
-      list.push({
-        id: "default-1",
-        type: "announcement",
-        badge: "Free Delivery",
-        text: "Free Pan-India Express Delivery on Orders Above ₹499",
-        link: "#products-section",
-        linkText: "Shop Now",
-        icon: <Truck className="w-3.5 h-3.5 text-amber-950" />,
-      });
-    }
+    // Demo data removed per user request
 
     return list;
   }, [announcements, offers, announcementEnabled]);
