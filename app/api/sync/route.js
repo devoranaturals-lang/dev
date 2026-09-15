@@ -175,6 +175,8 @@ async function syncToSupabaseBackground(type, data) {
       if (data.whatsapp !== undefined) basePayload.whatsapp = data.whatsapp;
       if (data.logo_url !== undefined) basePayload.logo_url = data.logo_url;
       if (data.free_shipping_threshold !== undefined) basePayload.free_shipping_threshold = Number(data.free_shipping_threshold);
+      if (data.shipping_enabled !== undefined) basePayload.shipping_enabled = Boolean(data.shipping_enabled);
+      if (data.state_shipping_enabled !== undefined) basePayload.state_shipping_enabled = Boolean(data.state_shipping_enabled);
 
       const fullPayload = { ...basePayload, ...data, extended_data: data };
       delete fullPayload.id;
@@ -390,6 +392,8 @@ export async function GET() {
               address: setRes.data.address !== undefined ? setRes.data.address : (store.settings?.address || ""),
               whatsapp: setRes.data.whatsapp !== undefined ? setRes.data.whatsapp : (store.settings?.whatsapp || ""),
               support_hours: setRes.data.support_hours !== undefined ? setRes.data.support_hours : (store.settings?.support_hours || ""),
+              shipping_enabled: setRes.data.shipping_enabled !== undefined ? Boolean(setRes.data.shipping_enabled) : (store.settings?.shipping_enabled !== undefined ? Boolean(store.settings.shipping_enabled) : true),
+              state_shipping_enabled: setRes.data.state_shipping_enabled !== undefined ? Boolean(setRes.data.state_shipping_enabled) : (store.settings?.state_shipping_enabled !== undefined ? Boolean(store.settings.state_shipping_enabled) : true),
             };
           }
         }

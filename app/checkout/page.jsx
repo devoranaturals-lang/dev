@@ -691,14 +691,16 @@ Please confirm my order. Thank you!`;
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
                 <span>State *</span>
-                {isStateShippingEnabled ? (
-                  <span className="text-[10px] font-extrabold text-emerald-800">
-                    {isTamilNadu ? `TN: ₹${tnRate}` : `Other: ₹${otherRate}`}
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-slate-500">
-                    Flat: ₹{flatStandardRate}
-                  </span>
+                {isShippingEnabled && (
+                  isStateShippingEnabled ? (
+                    <span className="text-[10px] font-extrabold text-emerald-800">
+                      {isTamilNadu ? `TN: ₹${tnRate}` : `Other: ₹${otherRate}`}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-500">
+                      Flat: ₹{flatStandardRate}
+                    </span>
+                  )
                 )}
               </label>
               <select
@@ -709,9 +711,9 @@ Please confirm my order. Thank you!`;
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-700"
               >
                 <option value="Tamil Nadu">
-                  Tamil Nadu {isStateShippingEnabled ? `(₹${tnRate} Shipping)` : ""}
+                  Tamil Nadu {isShippingEnabled && isStateShippingEnabled ? `(₹${tnRate} Shipping)` : ""}
                 </option>
-                <optgroup label={isStateShippingEnabled ? `Other States (₹${otherRate} Shipping)` : "Other States"}>
+                <optgroup label={isShippingEnabled && isStateShippingEnabled ? `Other States (₹${otherRate} Shipping)` : "Other States"}>
                   {INDIAN_STATES.filter((s) => s !== "Tamil Nadu").map((st) => (
                     <option key={st} value={st}>
                       {st}
@@ -916,72 +918,74 @@ Please confirm my order. Thank you!`;
                 <span>-₹{discountAmount.toLocaleString("en-IN")}</span>
               </div>
             )}
-            <div className="flex justify-between items-center text-slate-700">
-              <span>Shipping Charge</span>
-              <span>
-                {!isShippingEnabled
-                  ? "Disabled"
-                  : shippingCharge === 0
-                  ? "FREE"
-                  : `+₹${shippingCharge.toLocaleString("en-IN")}`}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-slate-600">
-              <div>
-                <span className="block text-slate-800 font-bold text-xs">
-                  {isStateShippingEnabled
-                    ? `Standard Delivery (${isTamilNadu ? "Tamil Nadu" : "Other States"})`
-                    : "Standard Ground Delivery (Nationwide)"}
-                </span>
-                <span className="text-[10px] text-slate-400 block">
-                  {isStateShippingEnabled
-                    ? (isTamilNadu ? "Local State Delivery (1-2 Days)" : "Interstate Delivery (3-5 Days)")
-                    : "Standard Ground Delivery (3-5 Days)"}
-                </span>
-              </div>
-              <span className={`font-bold ${shippingCharge === 0 ? "text-emerald-600 font-black" : "text-slate-900"}`}>
-                {shippingCharge === 0 ? (
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-emerald-600 font-black">FREE</span>
-                    <span className="text-[10px] line-through text-slate-400">₹{applicableShippingRate}</span>
+            {isShippingEnabled && (
+              <>
+                <div className="flex justify-between items-center text-slate-700">
+                  <span>Shipping Charge</span>
+                  <span className={shippingCharge === 0 ? "text-emerald-600 font-black" : ""}>
+                    {shippingCharge === 0
+                      ? "FREE"
+                      : `+₹${shippingCharge.toLocaleString("en-IN")}`}
                   </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <div>
+                    <span className="block text-slate-800 font-bold text-xs">
+                      {isStateShippingEnabled
+                        ? `Standard Delivery (${isTamilNadu ? "Tamil Nadu" : "Other States"})`
+                        : "Standard Ground Delivery (Nationwide)"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      {isStateShippingEnabled
+                        ? (isTamilNadu ? "Local State Delivery (1-2 Days)" : "Interstate Delivery (3-5 Days)")
+                        : "Standard Ground Delivery (3-5 Days)"}
+                    </span>
+                  </div>
+                  <span className={`font-bold ${shippingCharge === 0 ? "text-emerald-600 font-black" : "text-slate-900"}`}>
+                    {shippingCharge === 0 ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-emerald-600 font-black">FREE</span>
+                        <span className="text-[10px] line-through text-slate-400">₹{applicableShippingRate}</span>
+                      </span>
+                    ) : (
+                      `+₹${shippingCharge}`
+                    )}
+                  </span>
+                </div>
+
+                {isStateShippingEnabled ? (
+                  <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>TN: <strong className="text-emerald-950 font-bold">₹{tnRate}</strong></span>
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <span>Other States: <strong className="text-blue-950 font-bold">₹{otherRate}</strong></span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-emerald-800 font-bold">Free on ₹{freeThreshold}+</span>
+                  </div>
                 ) : (
-                  `+₹${shippingCharge}`
+                  <div className="p-2 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Flat Rate: <strong className="text-slate-900 font-bold">₹{flatStandardRate}</strong></span>
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-emerald-800 font-bold">Free on ₹{freeThreshold}+</span>
+                  </div>
                 )}
-              </span>
-            </div>
 
-            {isStateShippingEnabled ? (
-              <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>TN: <strong className="text-emerald-950 font-bold">₹{tnRate}</strong></span>
-                </span>
-                <span className="text-slate-300">•</span>
-                <span>Other States: <strong className="text-blue-950 font-bold">₹{otherRate}</strong></span>
-                <span className="text-slate-300">•</span>
-                <span className="text-emerald-800 font-bold">Free on ₹{freeThreshold}+</span>
-              </div>
-            ) : (
-              <div className="p-2 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Flat Rate: <strong className="text-slate-900 font-bold">₹{flatStandardRate}</strong></span>
-                </span>
-                <span className="text-slate-300">•</span>
-                <span className="text-emerald-800 font-bold">Free on ₹{freeThreshold}+</span>
-              </div>
-            )}
-
-            {freeThreshold > 0 && !isFreeStandard && (
-              <div className="text-[11px] text-amber-900 bg-amber-50/90 p-2.5 rounded-xl border border-amber-200">
-                Add <strong className="font-extrabold text-amber-800">₹{freeThreshold - cartTotal}</strong> more for <strong>FREE Delivery</strong>!
-              </div>
-            )}
-            {isFreeStandard && (
-              <div className="text-[11px] text-emerald-900 bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-200">
-                🎉 <strong>FREE Standard Delivery</strong> applied!
-              </div>
+                {freeThreshold > 0 && !isFreeStandard && (
+                  <div className="text-[11px] text-amber-900 bg-amber-50/90 p-2.5 rounded-xl border border-amber-200">
+                    Add <strong className="font-extrabold text-amber-800">₹{freeThreshold - cartTotal}</strong> more for <strong>FREE Delivery</strong>!
+                  </div>
+                )}
+                {isFreeStandard && (
+                  <div className="text-[11px] text-emerald-900 bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-200">
+                    🎉 <strong>FREE Standard Delivery</strong> applied!
+                  </div>
+                )}
+              </>
             )}
             <div className="flex justify-between text-lg font-black text-slate-900 pt-2 border-t border-slate-100">
               <span>Total Payable</span>

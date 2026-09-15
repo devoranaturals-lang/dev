@@ -204,6 +204,7 @@ export default function CartPage() {
     } catch (e) {}
   };
 
+  const isShippingEnabled = storeSettings?.shipping_enabled !== false;
   const freeThreshold = Number(storeSettings?.free_shipping_threshold !== undefined ? storeSettings.free_shipping_threshold : 499);
   const isFreeStandard = (freeThreshold > 0 && cartTotal >= freeThreshold) || appliedCoupon?.discountType === "free_shipping";
   const finalCartTotal = Math.max(0, cartTotal - discountAmount);
@@ -448,12 +449,12 @@ export default function CartPage() {
                 </div>
               )}
 
-              {freeThreshold > 0 && !isFreeStandard && (
+              {isShippingEnabled && freeThreshold > 0 && !isFreeStandard && (
                 <div className="text-[11px] text-emerald-900 bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-200">
                   Add <strong className="font-extrabold text-emerald-800">₹{freeThreshold - cartTotal}</strong> more to qualify for <strong>FREE Standard Delivery</strong>!
                 </div>
               )}
-              {isFreeStandard && (
+              {isShippingEnabled && isFreeStandard && (
                 <div className="text-[11px] text-emerald-900 bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-200">
                   🎉 You have qualified for <strong>FREE Standard Delivery</strong>!
                 </div>
@@ -462,7 +463,9 @@ export default function CartPage() {
               <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline text-lg font-black text-slate-900">
                 <div>
                   <span>Total</span>
-                  <span className="block text-[11px] font-normal text-slate-400">Shipping calculated at checkout</span>
+                  {isShippingEnabled && (
+                    <span className="block text-[11px] font-normal text-slate-400">Shipping calculated at checkout</span>
+                  )}
                 </div>
                 <span className="text-earth-700">₹{finalCartTotal.toLocaleString("en-IN")}</span>
               </div>
