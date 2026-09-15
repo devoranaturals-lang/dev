@@ -102,6 +102,7 @@ export default function AdminSettingsPage() {
     address: "",
     whatsapp: "",
     free_shipping_threshold: 499,
+    shipping_enabled: true,
     state_shipping_enabled: true,
     shipping_charge_tamilnadu: 50,
     shipping_charge_other_states: 100,
@@ -172,6 +173,8 @@ export default function AdminSettingsPage() {
             store_name: data.store_name || "Devora Naturals",
             free_shipping_threshold:
               data.free_shipping_threshold !== undefined ? data.free_shipping_threshold : 499,
+            shipping_enabled:
+              data.shipping_enabled !== undefined ? Boolean(data.shipping_enabled) : true,
             state_shipping_enabled:
               data.state_shipping_enabled !== undefined ? Boolean(data.state_shipping_enabled) : true,
             shipping_charge_tamilnadu:
@@ -226,6 +229,13 @@ export default function AdminSettingsPage() {
     setFormData((prev) => ({
       ...prev,
       state_shipping_enabled: prev.state_shipping_enabled !== undefined ? !prev.state_shipping_enabled : false,
+    }));
+  };
+
+  const handleToggleShippingMaster = () => {
+    setFormData((prev) => ({
+      ...prev,
+      shipping_enabled: prev.shipping_enabled !== undefined ? !prev.shipping_enabled : false,
     }));
   };
 
@@ -606,13 +616,69 @@ export default function AdminSettingsPage() {
                 <div>
                   <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <Truck className="w-4 h-4 text-emerald-700" />
-                    <span>2. State-Based Shipping (Tamil Nadu vs Other States)</span>
+                    <span>2. Shipping Settings</span>
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Toggle and configure state-specific delivery charges (Tamil Nadu ₹50, Other States ₹100) or flat nationwide rate.
+                    Enable or disable shipping charges entirely, or toggle state-specific delivery charges (Tamil Nadu ₹50, Other States ₹100) vs flat nationwide rate.
                   </p>
                 </div>
               </div>
+
+              {/* Master ON/OFF Switch for ALL Shipping */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-xs mb-6">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`p-2.5 rounded-xl transition-colors shrink-0 ${
+                      formData.shipping_enabled !== false
+                        ? "bg-brand-100 text-brand-800"
+                        : "bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    <Truck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900">
+                      Overall Shipping Charges
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {formData.shipping_enabled !== false
+                        ? "ON: Shipping charges are applied at checkout based on rules below."
+                        : "OFF: Shipping is entirely free/hidden for all customers."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ON/OFF Switch Button */}
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`text-xs font-black uppercase tracking-wider ${
+                      formData.shipping_enabled !== false
+                        ? "text-brand-700 font-extrabold"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {formData.shipping_enabled !== false ? "ON (ACTIVE)" : "OFF (DISABLED)"}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleShippingMaster}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                      formData.shipping_enabled !== false ? "bg-brand-600" : "bg-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
+                        formData.shipping_enabled !== false ? "translate-x-8" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Only show rules if shipping is enabled overall */}
+              {formData.shipping_enabled !== false && (
+                <>
 
               {/* Master ON/OFF Switch Row for State-Based Shipping */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
@@ -867,6 +933,18 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
               )}
+                  </>
+                ) : (
+                  <div className="bg-slate-100 border border-slate-200 rounded-xl p-3.5 flex items-start gap-3 text-xs text-slate-600">
+                    <AlertCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Replication Note:</strong> When switched OFF, customers will see{" "}
+                      <span className="font-bold">"Free Shipping / Shipping Disabled"</span> on
+                      product and checkout pages.
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
