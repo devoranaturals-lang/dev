@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
     whatsapp TEXT DEFAULT '8608540400',
     -- Shipping Configuration
     free_shipping_threshold NUMERIC(10, 2) DEFAULT 499,
+    shipping_enabled BOOLEAN DEFAULT true,
     state_shipping_enabled BOOLEAN DEFAULT true,
     shipping_charge_tamilnadu NUMERIC(10, 2) DEFAULT 50,
     shipping_charge_other_states NUMERIC(10, 2) DEFAULT 100,

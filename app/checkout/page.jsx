@@ -412,8 +412,8 @@ Please confirm my order. Thank you!`;
         const cleanNumber = whatsappNumber.replace(/\D/g, "");
         const formattedWa = cleanNumber.startsWith("91") ? cleanNumber : `91${cleanNumber}`;
         finalWaUrl = `https://wa.me/${formattedWa}?text=${encodedMessage}`;
-        // Automatically open if browser allows, but we also save it in state to render a button
-        setTimeout(() => window.open(finalWaUrl, '_blank'), 100);
+        // On mobile, redirecting the same tab is more reliable than window.open which gets blocked
+        setTimeout(() => { window.location.href = finalWaUrl; }, 1500);
       }
       
       setOrderSuccess({ 
