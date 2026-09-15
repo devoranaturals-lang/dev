@@ -204,15 +204,9 @@ export default function CartPage() {
     } catch (e) {}
   };
 
-  const isStateShippingEnabled = storeSettings?.state_shipping_enabled !== false;
   const freeThreshold = Number(storeSettings?.free_shipping_threshold !== undefined ? storeSettings.free_shipping_threshold : 499);
-  const tnRate = Number(storeSettings?.shipping_charge_tamilnadu !== undefined ? storeSettings.shipping_charge_tamilnadu : 50);
-  const otherRate = Number(storeSettings?.shipping_charge_other_states !== undefined ? storeSettings.shipping_charge_other_states : 100);
-  const flatStandardRate = Number(storeSettings?.standard_shipping_charge !== undefined ? storeSettings.standard_shipping_charge : 50);
-  const standardShippingRate = isStateShippingEnabled ? tnRate : flatStandardRate;
   const isFreeStandard = (freeThreshold > 0 && cartTotal >= freeThreshold) || appliedCoupon?.discountType === "free_shipping";
-  const estimatedShipping = isFreeStandard ? 0 : standardShippingRate;
-  const finalEstimatedTotal = Math.max(0, cartTotal - discountAmount + estimatedShipping);
+  const finalCartTotal = Math.max(0, cartTotal - discountAmount);
 
   if (cart.length === 0) {
     return (
@@ -454,33 +448,6 @@ export default function CartPage() {
                 </div>
               )}
 
-              <div className="flex justify-between text-slate-600">
-                <span>Shipping Estimate</span>
-                <span className={`font-bold ${isFreeStandard ? "text-emerald-600 font-extrabold" : "text-slate-800"}`}>
-                  {isFreeStandard
-                    ? "FREE"
-                    : isStateShippingEnabled
-                    ? `₹${tnRate} (TN) / ₹${otherRate} (Other)`
-                    : `₹${flatStandardRate}`}
-                </span>
-              </div>
-
-              {isStateShippingEnabled ? (
-                <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200/80 p-2 rounded-xl flex items-center justify-between">
-                  <span>Tamil Nadu: <strong className="text-emerald-900 font-bold">₹{tnRate}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span>Other States: <strong className="text-blue-900 font-bold">₹{otherRate}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-emerald-800 font-semibold">Free on ₹{freeThreshold}+</span>
-                </div>
-              ) : (
-                <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200/80 p-2 rounded-xl flex items-center justify-between">
-                  <span>Standard Delivery: <strong className="text-slate-900 font-bold">₹{flatStandardRate}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-emerald-800 font-semibold">Free on ₹{freeThreshold}+</span>
-                </div>
-              )}
-
               {freeThreshold > 0 && !isFreeStandard && (
                 <div className="text-[11px] text-emerald-900 bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-200">
                   Add <strong className="font-extrabold text-emerald-800">₹{freeThreshold - cartTotal}</strong> more to qualify for <strong>FREE Standard Delivery</strong>!
@@ -492,9 +459,12 @@ export default function CartPage() {
                 </div>
               )}
 
-              <div className="border-t border-slate-100 pt-3 flex justify-between text-lg font-black text-slate-900">
-                <span>Estimated Total</span>
-                <span className="text-earth-700">₹{finalEstimatedTotal.toLocaleString("en-IN")}</span>
+              <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline text-lg font-black text-slate-900">
+                <div>
+                  <span>Total</span>
+                  <span className="block text-[11px] font-normal text-slate-400">Shipping calculated at checkout</span>
+                </div>
+                <span className="text-earth-700">₹{finalCartTotal.toLocaleString("en-IN")}</span>
               </div>
             </div>
 

@@ -677,7 +677,7 @@ export default function AdminSettingsPage() {
               </div>
               
               {/* Only show rules if shipping is enabled overall */}
-              {formData.shipping_enabled !== false && (
+              {formData.shipping_enabled !== false ? (
                 <>
 
               {/* Master ON/OFF Switch Row for State-Based Shipping */}
@@ -944,7 +944,6 @@ export default function AdminSettingsPage() {
                     </span>
                   </div>
                 )}
-              </div>
             </div>
           )}
 

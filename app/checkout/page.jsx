@@ -25,6 +25,22 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+function formatWhatsAppOrderLink(rawPhone, textMessage) {
+  const defaultFallback = "918608540400";
+  let digits = String(rawPhone || "").replace(/\D/g, "").replace(/^0+/, "");
+  if (digits.length === 10) {
+    digits = `91${digits}`;
+  } else if (!digits || digits.length < 10) {
+    digits = defaultFallback;
+  }
+  const encoded = encodeURIComponent(textMessage);
+  return {
+    cleanPhone: digits,
+    apiWaUrl: `https://api.whatsapp.com/send?phone=${digits}&text=${encoded}`,
+    waMeUrl: `https://wa.me/${digits}?text=${encoded}`,
+  };
+}
+
 const INDIAN_STATES = [
   "Tamil Nadu",
   "Kerala",
@@ -93,7 +109,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("8608540400");
   const [storeSettings, setStoreSettings] = useState(null);
 
   const [couponCode, setCouponCode] = useState("");
@@ -108,9 +124,8 @@ export default function CheckoutPage() {
         const [contact, fetchedOffers] = await Promise.all([getContactDetails(), getOffers()]);
         if (contact) {
           setStoreSettings(contact);
-          if (contact.whatsapp) {
-            setWhatsappNumber(contact.whatsapp);
-          }
+          const resolvedWa = contact.whatsapp || contact.phone || "8608540400";
+          setWhatsappNumber(resolvedWa);
         }
         const offersList = fetchedOffers || [];
         setOffers(offersList);
@@ -406,14 +421,21 @@ ${appliedCoupon ? `*Coupon Discount on Total Order (${appliedCoupon.code || appl
 
 Please confirm my order. Thank you!`;
 
-      const encodedMessage = encodeURIComponent(message);
-      let finalWaUrl = "";
-      if (whatsappNumber) {
-        const cleanNumber = whatsappNumber.replace(/\D/g, "");
-        const formattedWa = cleanNumber.startsWith("91") ? cleanNumber : `91${cleanNumber}`;
-        finalWaUrl = `https://wa.me/${formattedWa}?text=${encodedMessage}`;
-        // On mobile, redirecting the same tab is more reliable than window.open which gets blocked
-        setTimeout(() => { window.location.href = finalWaUrl; }, 1500);
+      const targetWa = whatsappNumber || storeSettings?.whatsapp || storeSettings?.phone || "8608540400";
+      const { cleanPhone, apiWaUrl, waMeUrl } = formatWhatsAppOrderLink(targetWa, message);
+
+      // Attempt immediate new tab launch, with fallback redirect
+      try {
+        const waWin = window.open(apiWaUrl, "_blank");
+        if (!waWin || waWin.closed || typeof waWin.closed === "undefined") {
+          setTimeout(() => {
+            window.location.href = apiWaUrl;
+          }, 1500);
+        }
+      } catch (e) {
+        setTimeout(() => {
+          window.location.href = apiWaUrl;
+        }, 1500);
       }
       
       setOrderSuccess({ 
@@ -423,7 +445,10 @@ Please confirm my order. Thank you!`;
         coupon_code: appliedCoupon?.code || "",
         shipping_charge: shippingCharge, 
         shipping_method: isShippingEnabled ? "Standard Delivery" : "Free Shipping",
-        waUrl: finalWaUrl
+        waUrl: apiWaUrl,
+        waMeUrl: waMeUrl,
+        waPhone: cleanPhone,
+        rawMessage: message,
       });
       if (appliedCoupon) {
         await incrementCouponUsage(appliedCoupon.code || appliedCoupon.discountCode);
@@ -496,23 +521,26 @@ Please confirm my order. Thank you!`;
             </div>
           </div>
 
-          <p className="text-xs text-slate-500">
-            A confirmation has been prepared for WhatsApp. If it didn't open automatically, you can send it manually below or reach us on WhatsApp at{" "}
-            <span className="font-bold text-slate-800">{whatsappNumber}</span>.
-          </p>
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1.5">
+            <div className="flex items-center justify-center gap-2 text-emerald-800 font-extrabold text-xs sm:text-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>WhatsApp Order Notification Ready (+{orderSuccess.waPhone || "918608540400"})</span>
+            </div>
+            <p className="text-xs text-emerald-700">
+              Your order details have been prepared for WhatsApp. If WhatsApp didn't open automatically, please click the button below to send your confirmation!
+            </p>
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            {orderSuccess.waUrl && (
-              <a
-                href={orderSuccess.waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-6 py-3 bg-[#25D366] hover:bg-[#1ebd5a] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                <span>Send via WhatsApp</span>
-              </a>
-            )}
+            <a
+              href={orderSuccess.waUrl || `https://api.whatsapp.com/send?phone=918608540400`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-6 py-3.5 bg-[#25D366] hover:bg-[#1ebd5a] text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 transform active:scale-95 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+              <span>Send via WhatsApp</span>
+            </a>
             <Link
               href="/account?tab=orders"
               className="w-full sm:w-auto px-6 py-3 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
